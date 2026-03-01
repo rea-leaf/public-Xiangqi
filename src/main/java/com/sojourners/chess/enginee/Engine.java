@@ -6,7 +6,6 @@ import com.sojourners.chess.model.BookData;
 import com.sojourners.chess.model.EngineConfig;
 import com.sojourners.chess.model.ThinkData;
 import com.sojourners.chess.openbook.OpenBookManager;
-import com.sojourners.chess.util.ExecutorsUtils;
 import com.sojourners.chess.util.PathUtils;
 import com.sojourners.chess.util.StringUtils;
 
@@ -37,6 +36,7 @@ public class Engine {
      * 停止标志位
      */
     private volatile boolean stopFlag;
+    private volatile long time;
 
     private BufferedReader reader;
 
@@ -61,6 +61,8 @@ public class Engine {
         this.cb = cb;
         this.random = new SecureRandom();
 
+        this.time = Integer.MAX_VALUE;
+
         if (ec.getOptions().get("MultiPV") != null) {
             multiPV = Integer.parseInt(ec.getOptions().get("MultiPV"));
         } else {
@@ -76,10 +78,7 @@ public class Engine {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     System.out.println(line);
-                    if (line.contains("nps")) {
-                        if (line.contains("info depth 1 ")) {
-                            stopFlag = false;
-                        }
+                    if (line.contains("depth") || line.contains("nps")) {
                         thinkDetail(line);
                     } else if (line.contains("bestmove")) {
                         bestMove(line);
@@ -270,6 +269,17 @@ public class Engine {
                 }
             }
         }
+
+        if (td.getDepth() != null && td.getDepth() < 5) {
+            stopFlag = false;
+        }
+        if (td.getTime() != null) {
+            if (td.getTime() < this.time || td.getTime() > 0 && td.getTime() < 70) {
+                stopFlag = false;
+            }
+            this.time = td.getTime();
+        }
+
         if (td.getDetail().size() > 0) {
             cb.thinkDetail(td);
         }
@@ -294,7 +304,6 @@ public class Engine {
             }
             this.analysis(fenCode, moves, null);
         });
-
     }
 
     public void analysis(String fenCode, List<String> moves, List<String> tacticList) {

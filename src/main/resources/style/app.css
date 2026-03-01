@@ -8,6 +8,10 @@
     -fx-background-color: #87CEEB;
 }
 
+.tree-cell:selected {
+    -fx-background-color: #87CEEB;
+}
+
 
 .button {
     -fx-pref-width: 24px;
@@ -25,4 +29,3 @@
     /*-fx-background-insets:  0 0 0 0, 0, 1, 2;*/
 
 }
-

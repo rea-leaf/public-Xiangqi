@@ -77,6 +77,14 @@ public class Properties implements Serializable {
 
     private int mouseClickDelay = 2;
     private int mouseMoveDelay = 0;
+    /*
+     * 显示棋谱管理
+     */
+    private boolean showChessNotation = false;
+
+    private String chessManualPath;
+
+    private boolean manualTip = true;
 
     private Properties(ChessBoard.BoardSize boardSize, boolean stepTip,
                        int threadNum, int hashSize, String engineName, Engine.AnalysisModel analysisModel, long analysisValue,
@@ -138,7 +146,7 @@ public class Properties implements Serializable {
                             Engine.AnalysisModel.FIXED_TIME, 5000, true,
                             920, 737, 0.64, 0.6,
                             100, 2, true, true, false,
-                            true, true, false, 2000, 15,
+                            true, true, false, 2000, 9999,
                             MoveRule.BEST_SCORE, true, new ArrayList<>());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -445,5 +453,29 @@ public class Properties implements Serializable {
 
     public void setTopWindow(boolean topWindow) {
         this.topWindow = topWindow;
+    }
+
+    public boolean isShowChessNotation() {
+        return showChessNotation;
+    }
+
+    public void setShowChessNotation(boolean showChessNotation) {
+        this.showChessNotation = showChessNotation;
+    }
+
+    public String getChessManualPath() {
+        return chessManualPath;
+    }
+
+    public void setChessManualPath(String chessManualPath) {
+        this.chessManualPath = chessManualPath;
+    }
+
+    public boolean isManualTip() {
+        return manualTip;
+    }
+
+    public void setManualTip(boolean manualTip) {
+        this.manualTip = manualTip;
     }
 }

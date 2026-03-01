@@ -1,6 +1,7 @@
 package com.sojourners.chess.board;
 
 import com.sojourners.chess.util.MathUtils;
+import com.sojourners.chess.util.XiangqiUtils;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -26,7 +27,8 @@ public abstract class BaseBoardRender implements BoardRender {
     }
 
     public void paint(ChessBoard.BoardSize boardSize, char[][] board, ChessBoard.Step prevStep, ChessBoard.Point remark,
-                      boolean stepTip, boolean showMultiPV, List<ChessBoard.MoveTip> moveTips, boolean isReverse, boolean showNumber) {
+                      boolean stepTip, boolean showMultiPV, List<ChessBoard.MoveTip> moveTips, boolean isReverse, boolean showNumber,
+                      boolean manualTip, List<ChessBoard.Step> manualList) {
         int padding = getPadding(boardSize);
         int piece = getPieceSize(boardSize);
         int pos = padding + piece / 2;
@@ -55,17 +57,24 @@ public abstract class BaseBoardRender implements BoardRender {
         }
         // 绘制棋子
         drawPieces(pos, piece, board, isReverse, boardSize);
+        // 棋谱变招
+        if (manualTip && manualList != null && manualList.size() > 1) {
+            for (int i = manualList.size() - 1; i >= 0; i--) {
+                ChessBoard.Step manual = manualList.get(i);
+                drawStepTips(pos, piece, manual.getStart().x, manual.getStart().y, manual.getEnd().x, manual.getEnd().y, true, i + 1, isReverse, Color.web("#FF2F00"));
+            }
+        }
         // 绘制棋步提示
         if (stepTip && moveTips != null) {
-            for (int i = 0; i < moveTips.size(); i++) {
+            for (int i = moveTips.size() - 1; i >= 0; i--) {
                 ChessBoard.MoveTip tip = moveTips.get(i);
-                ChessBoard.Step first = tip.getFirst();
-                if (first != null) {
-                    drawStepTips(pos, piece, first.getStart().x, first.getStart().y, first.getEnd().x, first.getEnd().y, showMultiPV, i + 1, isReverse, Color.PURPLE);
-                }
                 ChessBoard.Step second = tip.getSecond();
                 if (second != null) {
                     drawStepTips(pos, piece, second.getStart().x, second.getStart().y, second.getEnd().x, second.getEnd().y, showMultiPV, i + 1, isReverse, Color.GREEN);
+                }
+                ChessBoard.Step first = tip.getFirst();
+                if (first != null) {
+                    drawStepTips(pos, piece, first.getStart().x, first.getStart().y, first.getEnd().x, first.getEnd().y, showMultiPV, i + 1, isReverse, Color.PURPLE);
                 }
             }
         }
@@ -115,7 +124,7 @@ public abstract class BaseBoardRender implements BoardRender {
     }
 
     @Override
-    public void drawStepTips(int pos, int piece, int x1, int y1, int x2, int y2, boolean showMultiPV, int pv, boolean isReverse, Color color) {
+    public void drawStepTips(int pos, int piece, int x1, int y1, int x2, int y2, boolean showNumber, int pv, boolean isReverse, Color color) {
         x1 = pos + piece * getReverseX(x1, isReverse);
         y1 = pos + piece * getReverseY(y1, isReverse);
         x2 = pos + piece * getReverseX(x2, isReverse);
@@ -147,7 +156,7 @@ public abstract class BaseBoardRender implements BoardRender {
         gc.lineTo(tmpX1, y1 + offY);
         gc.closePath();
 
-        if (showMultiPV) {
+        if (showNumber) {
             double cx = x1 - piece / 8.0 - len / 2.0;
             double cy = y1;
             double rr = piece / 6d;
@@ -160,12 +169,12 @@ public abstract class BaseBoardRender implements BoardRender {
         gc.restore();
 
         // 圆内绘制 PV 数字（restore 后绘制，不随箭头旋转），颜色与箭头一致
-        if (showMultiPV) {
+        if (showNumber) {
             gc.save();
             double rad = Math.toRadians(angle);
             double centerX = x1 - (piece / 8.0 + len / 2.0) * Math.cos(rad);
             double centerY = y1 - (piece / 8.0 + len / 2.0) * Math.sin(rad);
-            double fontSize = piece / 3.6d;
+            double fontSize = pv < 10 ? piece / 3.6d : piece / 5d;
             gc.setFont(Font.font(fontSize));
             gc.setTextAlign(TextAlignment.CENTER);
             gc.setTextBaseline(VPos.CENTER);
@@ -261,7 +270,7 @@ public abstract class BaseBoardRender implements BoardRender {
             double yTop = pos - piece / 4, yBottom = pos + 9 * piece + piece / 2.3;
             gc.fillText(String.valueOf(number), isReverse ? xBottom : xTop, isReverse ? yBottom : yTop);
             // 红方
-            gc.fillText(ChessBoard.map.get(number), isReverse ? xTop : xBottom, isReverse ? yTop : yBottom);
+            gc.fillText(XiangqiUtils.map.get(number), isReverse ? xTop : xBottom, isReverse ? yTop : yBottom);
         }
     }
 

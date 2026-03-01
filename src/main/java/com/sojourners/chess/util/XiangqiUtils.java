@@ -1,10 +1,66 @@
 package com.sojourners.chess.util;
 
+import com.sojourners.chess.board.ChessBoard;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class XiangqiUtils {
 
+    public static final Map<Character, Character> cnMap = new HashMap<>(32);
+    public static final Map<Character, String> map = new HashMap<>(32);
+
+    static {
+        cnMap.put('车', 'r');
+        cnMap.put('马', 'n');
+        cnMap.put('相', 'B');
+        cnMap.put('象', 'b');
+        cnMap.put('士', 'a');
+        cnMap.put('仕', 'A');
+        cnMap.put('将', 'k');
+        cnMap.put('帅', 'K');
+        cnMap.put('炮', 'C');
+        cnMap.put('卒', 'p');
+        cnMap.put('兵', 'P');
+
+        cnMap.put('一', '１');
+        cnMap.put('二', '２');
+        cnMap.put('三', '３');
+        cnMap.put('四', '４');
+        cnMap.put('五', '５');
+        cnMap.put('六', '６');
+        cnMap.put('七', '７');
+        cnMap.put('八', '８');
+        cnMap.put('九', '９');
+
+        map.put('r', "车");
+        map.put('n', "马");
+        map.put('b', "象");
+        map.put('a', "士");
+        map.put('k', "将");
+        map.put('c', "炮");
+        map.put('p', "卒");
+
+        map.put('R', "车");
+        map.put('N', "马");
+        map.put('B', "相");
+        map.put('A', "仕");
+        map.put('K', "帅");
+        map.put('C', "炮");
+        map.put('P', "兵");
+
+        map.put('１', "一");
+        map.put('２', "二");
+        map.put('３', "三");
+        map.put('４', "四");
+        map.put('５', "五");
+        map.put('６', "六");
+        map.put('７', "七");
+        map.put('８', "八");
+        map.put('９', "九");
+    }
 
     public static boolean canGo(char[][] board, int x1, int y1, int x2, int y2) {
         if (board[x1][y1] == ' ' || board[x2][y2] != ' ' && isRed(board[x1][y1]) == isRed(board[x2][y2])) {
@@ -264,10 +320,10 @@ public class XiangqiUtils {
         if ((y + 2 < 10) && (isRed && (board[y + 2][x + 1] == 'n' && board[y + 1][x + 1] == ' ' || board[y + 2][x - 1] == 'n' && board[y + 1][x - 1] == ' ') || !isRed && (board[y + 2][x + 1] == 'N' && board[y + 1][x + 1] == ' ' || board[y + 2][x - 1] == 'N' && board[y + 1][x - 1] == ' '))) {
             return true;
         }
-        if ((y - 1 >= 0 && y + 1 < 10) && (isRed && (board[y - 1][x - 2] == 'n' && board[y - 1][x - 1] == ' ' || y + 1 < 10 && board[y + 1][x - 2] == 'n' && board[y + 1][x - 1] == ' ') || !isRed && (y - 1 >=0 && board[y - 1][x - 2] == 'N' && board[y - 1][x - 1] == ' ' || board[y + 1][x - 2] == 'N' && board[y + 1][x - 1] == ' '))) {
+        if ((y - 1 >= 0) && (isRed && (board[y - 1][x - 2] == 'n' && board[y - 1][x - 1] == ' ' || board[y - 1][x + 2] == 'n' && board[y - 1][x + 1] == ' ') || !isRed && (board[y - 1][x - 2] == 'N' && board[y - 1][x - 1] == ' ' || board[y - 1][x + 2] == 'N' && board[y - 1][x + 1] == ' '))) {
             return true;
         }
-        if ((y - 1 >= 0 && y + 1 < 10) && (isRed && (board[y - 1][x + 2] == 'n' && board[y - 1][x + 1] == ' ' || y + 1 < 10 && board[y + 1][x + 2] == 'n' && board[y + 1][x + 1] == ' ') || !isRed && (y - 1 >=0 && board[y - 1][x + 2] == 'N' && board[y - 1][x + 1] == ' ' || board[y + 1][x + 2] == 'N' && board[y + 1][x + 1] == ' '))) {
+        if ((y + 1 < 10) && (isRed && (board[y + 1][x - 2] == 'n' && board[y + 1][x - 1] == ' ' || board[y + 1][x + 2] == 'n' && board[y + 1][x + 1] == ' ') || !isRed && (board[y + 1][x - 2] == 'N' && board[y + 1][x - 1] == ' ' || board[y + 1][x + 2] == 'N' && board[y + 1][x + 1] == ' '))) {
             return true;
         }
 
@@ -276,6 +332,7 @@ public class XiangqiUtils {
             for (int j = by + 1; j < ry; j++) {
                 if (board[j][rx] != ' ') {
                     f = false;
+                    break;
                 }
             }
             if (f) {
@@ -647,5 +704,278 @@ public class XiangqiUtils {
             return rIndex < bIndex;
         }
         return false;
+    }
+
+    public static void fenToBoard(char[][] board, String fenCode) {
+        try {
+            String[] arr = fenCode.split(" ")[0].split("/");
+            if (XiangqiUtils.isReverse(fenCode)) {
+                for (int i = 0; i < arr.length / 2; i++) {
+                    String tmp = arr[i];
+                    arr[i] = new StringBuffer(arr[arr.length - 1 - i]).reverse().toString();
+                    arr[arr.length - 1 - i] = new StringBuffer(tmp).reverse().toString();
+                }
+            }
+            for (int i = 0; i < 10; i++) {
+                int p = 0;
+                for (char c : arr[i].toCharArray()) {
+                    if (c >= '1' && c <= '9') {
+                        int count = c - '0';
+                        while (count-- > 0) {
+                            board[i][p++] = ' ';
+                        }
+                    } else {
+                        board[i][p++] = c;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static char[][] fenToBoard(String fenCode) {
+        char[][] board = new char[10][9];
+        fenToBoard(board, fenCode);
+        return board;
+    }
+
+    public static ChessBoard.Step translateCnMove(char[][] board, StringBuilder sb, String move) {
+        if (StringUtils.isEmpty(move) || move.length() < 4) {
+            sb.append(move);
+            return null;
+        }
+        char a = move.charAt(0), b = move.charAt(1), c = move.charAt(2), d = move.charAt(3);
+        char piece;
+        int fromI = 0, fromJ = 0, toI = 0, toJ = 0;
+        boolean isRed = map.containsValue(String.valueOf(d));
+        if (a == '前' || a == '中' || a == '后') {
+            piece = cnMap.get(b);
+            piece = isRed ? Character.toUpperCase(piece) : Character.toLowerCase(piece);
+            boolean isP = piece == 'p' || piece == 'P';
+            List<Integer> tmp = new ArrayList<>();
+            for (int j = 0; j < 9; j++) {
+                int count = 0;
+                tmp.clear();
+                for (int i = 0; i < 10; i++) {
+                    if (board[i][j] == piece) {
+                        count++;
+                        tmp.add(i);
+                    }
+                }
+                if (!isP && count == 2 || isP && (count == 2 || count == 3)) {
+                    fromJ = j;
+                    if (a == '前') {
+                        fromI = isRed ? tmp.getFirst() : tmp.getLast();
+                    } else if (a == '中') {
+                        fromI = tmp.get(1);
+                    } else if (a == '后') {
+                        fromI = isRed ? tmp.getLast() : tmp.getFirst();
+                    }
+                    break;
+                }
+            }
+        } else if (a == '一' || a == '二' || a == '三' || a == '四' || a == '五') {
+            piece = cnMap.get(b);
+            piece = isRed ? Character.toUpperCase(piece) : Character.toLowerCase(piece);
+            List<List<Integer>> tmp = new ArrayList<>();
+            for (int j = 0; j < 9; j++) {
+                List<Integer> list = new ArrayList<>();
+                for (int i = 0; i < 10; i++) {
+                    if (board[i][j] == piece) {
+                        list.add(i);
+                    }
+                }
+                if (list.size() == 1) list.clear();
+                tmp.add(list);
+            }
+            int n = cnMap.get(a) - '１' + 1;
+            if (isRed) {
+                for (int j = 8; j >= 0; j--) {
+                    if (n > tmp.get(j).size()) {
+                        n -= tmp.get(j).size();
+                    } else {
+                        fromJ = j;
+                        fromI = tmp.get(j).get(n - 1);
+                        break;
+                    }
+                }
+            } else {
+                for (int j = 0; j < 9; j++) {
+                    if (n > tmp.get(j).size()) {
+                        n -= tmp.get(j).size();
+                    } else {
+                        fromJ = j;
+                        fromI = tmp.get(j).get(tmp.get(j).size() - n);
+                        break;
+                    }
+                }
+            }
+        } else {
+            piece = cnMap.get(a);
+            piece = isRed ? Character.toUpperCase(piece) : Character.toLowerCase(piece);
+            fromJ = isRed ? 8 - (cnMap.get(b) - '１') : b - '１';
+            for (int i = 0; i < 10; i++) {
+                if (board[i][fromJ] == piece) {
+                    fromI = i;
+                    break;
+                }
+            }
+        }
+        int dist = (isRed ? cnMap.get(d) - '１' : d - '１') + 1;
+        if (c == '进' || c == '退') {
+            if (piece == 'r' || piece == 'c' || piece == 'p' || piece == 'k' || piece == 'R' || piece == 'C' || piece == 'P' || piece == 'K') {
+                toJ = fromJ;
+                int g = c == '进' ? dist : -dist;
+                toI = isRed ? fromI - g : fromI + g;
+            } else if (piece == 'n' || piece == 'N') {
+                toJ = isRed ? 8 - dist + 1 : dist - 1;
+                int g = Math.abs(fromJ - toJ) == 1 ? 2 : 1;
+                g = c == '进' ? g : -g;
+                toI = isRed ? fromI - g : fromI + g;
+            } else if (piece == 'b' || piece == 'B') {
+                toJ = isRed ? 8 - dist + 1 : dist - 1;
+                int g = c == '进' ? 2 : -2;
+                toI = isRed ? fromI - g : fromI + g;
+            } else if (piece == 'a' || piece == 'A') {
+                toJ = isRed ? 8 - dist + 1 : dist - 1;
+                int g = c == '进' ? 1 : -1;
+                toI = isRed ? fromI - g : fromI + g;
+            }
+        } else if (c == '平') {
+            toI = fromI;
+            toJ = isRed ? 8 - dist + 1 : dist - 1;
+        }
+        sb.append(ChessBoard.stepForEngine(fromJ, fromI, toJ, toI));
+        return new ChessBoard.Step(new ChessBoard.Point(fromJ, fromI), new ChessBoard.Point(toJ, toI));
+    }
+
+    public static void main(String[] args) {
+        char a = '１', b = '２', c = '３';
+        System.out.println((int)a);System.out.println((int)b);System.out.println((int)c);
+    }
+
+    public static ChessBoard.Step translate(char[][] board, StringBuilder sb, String move, boolean hasGo) {
+        if (StringUtils.isEmpty(move) || move.length() < 4) {
+            sb.append(move);
+            return null;
+        }
+        char a = move.charAt(0), b = move.charAt(1), c = move.charAt(2), d = move.charAt(3);
+        int fromI = 9 - Integer.parseInt(String.valueOf(b)), toI = 9 - Integer.parseInt(String.valueOf(d));
+        int fromJ = a - 'a', toJ = c - 'a';
+        char piece = hasGo ? board[toI][toJ] : board[fromI][fromJ];
+        boolean isRed = XiangqiUtils.isRed(piece);
+        String name = map.get(piece);
+        String prefix = getSameFilePrefix(board, fromI, fromJ, toI, toJ, piece, isRed, hasGo);
+        if (prefix != null) {
+            sb.append(prefix).append(name);
+        } else {
+            sb.append(name);
+            char pos = getPos(fromJ, isRed);
+            sb.append(isRed ? map.get(pos) : pos);
+        }
+        if (fromI == toI && fromJ != toJ) {
+            sb.append("平");
+            char pos = getPos(toJ, isRed);
+            sb.append(isRed ? map.get(pos) : pos);
+        } else if (fromI != toI && fromJ == toJ) {
+            if (isRed) {
+                sb.append(fromI > toI ? "进" : "退");
+            } else {
+                sb.append(fromI < toI ? "进" : "退");
+            }
+            char pos = (char) ('０' + (Math.abs(fromI - toI)));
+            sb.append(isRed ? map.get(pos) : pos);
+        } else {
+            if (isRed) {
+                sb.append(fromI > toI ? "进" : "退");
+            } else {
+                sb.append(fromI < toI ? "进" : "退");
+            }
+            char pos = getPos(toJ, isRed);
+            sb.append(isRed ? map.get(pos) : pos);
+        }
+        return new ChessBoard.Step(new ChessBoard.Point(fromJ, fromI), new ChessBoard.Point(toJ, toI));
+    }
+
+    private static char getPos(int j, boolean isRed) {
+        if (isRed) {
+            return (char) ('０' + 9 - j);
+        } else {
+            return (char) ('０' + j + 1);
+        }
+    }
+
+    private static String getSameFilePrefix(char[][] board, int fromI, int fromJ, int toI, int toJ, char piece, boolean isRed, boolean hasGo) {
+        if (piece == 'r' || piece == 'c' || piece == 'n' || piece == 'R' || piece == 'C' || piece == 'N') {
+            for (int i = 0; i < fromI; i++) {
+                if (board[i][fromJ] == piece && !(hasGo && i == toI && fromJ == toJ)) {
+                    return isRed ? "后" : "前";
+                }
+            }
+            for (int i = fromI + 1; i < 10; i++) {
+                if (board[i][fromJ] == piece && !(hasGo && i == toI && fromJ == toJ)) {
+                    return isRed ? "前" : "后";
+                }
+            }
+            return null;
+        } else if (piece == 'p' || piece == 'P') {
+            int before = 0, after = 0;
+            for (int i = 0; i < fromI; i++) {
+                if (board[i][fromJ] == piece && !(hasGo && i == toI && fromJ == toJ)) {
+                    before++;
+                }
+            }
+            for (int i = fromI + 1; i < 10; i++) {
+                if (board[i][fromJ] == piece && !(hasGo && i == toI && fromJ == toJ)) {
+                    after++;
+                }
+            }
+            if (before == 0 && after == 0) {
+                return null;
+            } else if (before + after >= 3) {
+                return map.get((char)('０' + (isRed ? before : after) + 1));
+            } else {
+                int left = 0, right = 0;
+                for (int j = 8; j > fromJ; j--) {
+                    int count = 0;
+                    for (int i = 0; i < 10; i++) {
+                        if (board[i][j] == piece && !(hasGo && i == toI && j == toJ)) {
+                            count++;
+                        }
+                    }
+                    if (count > 1) {
+                        right += count;
+                        break;
+                    }
+                }
+                for (int j = fromJ - 1; j >= 0; j--) {
+                    int count = 0;
+                    for (int i = 0; i < 10; i++) {
+                        if (board[i][j] == piece && !(hasGo && i == toI && j == toJ)) {
+                            count++;
+                        }
+                    }
+                    if (count > 1) {
+                        left += count;
+                        break;
+                    }
+                }
+                if (left == 0 && right == 0) {
+                    if (before == 1 && after == 1) {
+                        return "中";
+                    } else if (after == 0) {
+                        return isRed ? "后" : "前";
+                    } else if (before == 0) {
+                        return isRed ? "前" : "后";
+                    }
+                } else if (left > 0) {
+                    return map.get((char)('０' + (isRed ? before : after + left) + 1));
+                } else if (right > 0) {
+                    return map.get((char)('０' + (isRed ? before + right : after) + 1));
+                }
+            }
+        }
+        return null;
     }
 }

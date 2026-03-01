@@ -1,5 +1,6 @@
 package com.sojourners.chess.board;
 
+import com.sojourners.chess.config.Properties;
 import com.sojourners.chess.media.SoundPlayer;
 import com.sojourners.chess.util.PathUtils;
 import com.sojourners.chess.util.StringUtils;
@@ -30,37 +31,12 @@ public class ChessBoard {
 
     private boolean stepSound;
 
+    private boolean manualTip;
+    private List<Step> manualList = new ArrayList<>();
+
     private static SoundPlayer sound;
 
-    public static Map<Character, String> map = new HashMap<>(32);
-
     static {
-        map.put('r', "车");
-        map.put('n', "马");
-        map.put('b', "象");
-        map.put('a', "士");
-        map.put('k', "将");
-        map.put('c', "炮");
-        map.put('p', "卒");
-
-        map.put('R', "车");
-        map.put('N', "马");
-        map.put('B', "相");
-        map.put('A', "仕");
-        map.put('K', "帅");
-        map.put('C', "炮");
-        map.put('P', "兵");
-
-        map.put('１', "一");
-        map.put('２', "二");
-        map.put('３', "三");
-        map.put('４', "四");
-        map.put('５', "五");
-        map.put('６', "六");
-        map.put('７', "七");
-        map.put('８', "八");
-        map.put('９', "九");
-
         sound = new SoundPlayer(PathUtils.getJarPath() + "sound/click.wav",
                 PathUtils.getJarPath() + "sound/move.wav",
                 PathUtils.getJarPath() + "sound/capture.wav",
@@ -102,7 +78,7 @@ public class ChessBoard {
             this.y = y;
         }
     }
-    public class Step {
+    public static class Step {
         Point start;
         Point end;
         public Step(Point start, Point end) {
@@ -165,12 +141,14 @@ public class ChessBoard {
         CUSTOM;
     }
 
-    public ChessBoard(Canvas canvas, BoardSize bs, BoardStyle style, boolean stepTip, boolean showMultiPV, boolean stepSound, boolean showNumber, String fenCode) {
+    public ChessBoard(Canvas canvas, BoardSize bs, BoardStyle style, boolean stepTip, boolean manualTip,
+                      boolean showMultiPV, boolean stepSound, boolean showNumber, String fenCode) {
         if (this.boardRender == null) {
             this.boardRender = style == BoardStyle.CUSTOM ? new CustomBoardRender(canvas) : new DefaultBoardRender(canvas);
         }
 
         this.stepTip = stepTip;
+        this.manualTip = manualTip;
         this.stepSound = stepSound;
         this.showNumber = showNumber;
         this.showMultiPV = showMultiPV;
@@ -280,31 +258,7 @@ public class ChessBoard {
     }
 
     private void setBoard(String fenCode) {
-        try {
-            String[] arr = fenCode.split(" ")[0].split("/");
-            if (XiangqiUtils.isReverse(fenCode)) {
-                for (int i = 0; i < arr.length / 2; i++) {
-                    String tmp = arr[i];
-                    arr[i] = new StringBuffer(arr[arr.length - 1 - i]).reverse().toString();
-                    arr[arr.length - 1 - i] = new StringBuffer(tmp).reverse().toString();
-                }
-            }
-            for (int i = 0; i < 10; i++) {
-                int p = 0;
-                for (char c : arr[i].toCharArray()) {
-                    if (c >= '1' && c <= '9') {
-                        int count = c - '0';
-                        while (count-- > 0) {
-                            board[i][p++] = ' ';
-                        }
-                    } else {
-                        board[i][p++] = c;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        XiangqiUtils.fenToBoard(this.board, fenCode);
     }
 
     public String fenCode(boolean redGo) {
@@ -347,23 +301,23 @@ public class ChessBoard {
      * 浏览棋谱
      * @param fenCode
      * @param moveList
-     * @param p
      */
-    public void browseChessRecord(String fenCode, List<String> moveList, int p) {
+    public void browseChessRecord(String fenCode, List<String> moveList) {
         setBoard(fenCode);
-        if (p == 0) {
+        if (moveList == null || moveList.isEmpty()) {
             // 开始局面
             prevStep = null;
             moveTips.clear();
             remark = null;
+            manualList.clear();
             paint();
         } else {
-            for (int i = 0; i < p - 1; i++) {
+            for (int i = 0; i < moveList.size() - 1; i++) {
                 Step s = stepForBoard(moveList.get(i));
                 board[s.getEnd().y][s.getEnd().x] = board[s.getStart().y][s.getStart().x];
                 board[s.getStart().y][s.getStart().x] = ' ';
             }
-            Step s = stepForBoard(moveList.get(p - 1));
+            Step s = stepForBoard(moveList.get(moveList.size() - 1));
             move(s.getStart().x, s.getStart().y, s.getEnd().x, s.getEnd().y);
         }
     }
@@ -380,6 +334,15 @@ public class ChessBoard {
         if (stepTip) {
             paint();
         }
+    }
+
+    public void setManualList(List<String> list) {
+        manualList.clear();
+        for (String move : list) {
+            manualList.add(stepForBoard(move));
+        }
+        if (manualTip)
+            paint();
     }
 
     public Step stepForBoard(String step) {
@@ -440,6 +403,7 @@ public class ChessBoard {
         prevStep = new Step(new Point(x1, y1), new Point(x2, y2));
         moveTips.clear();
         remark = null;
+        manualList.clear();
         paint();
         return stepForEngine(x1, y1, x2, y2);
     }
@@ -472,7 +436,8 @@ public class ChessBoard {
     }
 
     private void paint() {
-        this.boardRender.paint(boardSize, this.board, prevStep, remark, stepTip, showMultiPV, moveTips, isReverse, showNumber);
+        this.boardRender.paint(boardSize, this.board, prevStep, remark, stepTip,
+                showMultiPV, moveTips, isReverse, showNumber, manualTip, manualList);
     }
 
     /**
@@ -504,6 +469,11 @@ public class ChessBoard {
         paint();
     }
 
+    public void setManualTip(boolean f) {
+        this.manualTip = f;
+        paint();
+    }
+
     public void setShowNumber(boolean showNumber) {
         this.showNumber = showNumber;
         paint();
@@ -524,7 +494,7 @@ public class ChessBoard {
      */
     public String translate(String move, boolean hasGo) {
         StringBuilder sb = new StringBuilder();
-        translateStep(this.board, sb, move, hasGo);
+        XiangqiUtils.translate(this.board, sb, move, hasGo);
         return sb.toString();
     }
 
@@ -535,13 +505,17 @@ public class ChessBoard {
      */
     public String translate(List<String> moveList) {
         for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[0].length; j++) {
-                copyBoard[i][j] = board[i][j];
-            }
+            System.arraycopy(board[i], 0, copyBoard[i], 0, copyBoard[i].length);
         }
         StringBuilder sb = new StringBuilder();
         for (String move : moveList) {
-            translateStep(copyBoard, sb, move, false);
+            char a = move.charAt(0), b = move.charAt(1), c = move.charAt(2), d = move.charAt(3);
+            int fromJ = a - 'a', toJ = c - 'a';
+            int fromI = 9 - Integer.parseInt(String.valueOf(b)), toI = 9 - Integer.parseInt(String.valueOf(d));
+            XiangqiUtils.translate(copyBoard, sb, move, false);
+            sb.append("  ");
+            copyBoard[toI][toJ] = copyBoard[fromI][fromJ];
+            copyBoard[fromI][fromJ] = ' ';
         }
         sb.delete(sb.length() - 2, sb.length());
         return sb.toString();
@@ -551,58 +525,15 @@ public class ChessBoard {
         return this.board;
     }
 
-    private void translateStep(char[][] board, StringBuilder sb, String move, boolean hasGo) {
-        if (StringUtils.isEmpty(move) || move.length() < 4) {
-            sb.append(move);
-            return;
-        }
-        char a = move.charAt(0), b = move.charAt(1), c = move.charAt(2), d = move.charAt(3);
-        int fromI = 9 - Integer.parseInt(String.valueOf(b)), toI = 9 - Integer.parseInt(String.valueOf(d));
-        int fromJ = a - 'a', toJ = c - 'a';
-        sb.append(map.get(hasGo ? board[toI][toJ] : board[fromI][fromJ]));
-        boolean isRed = XiangqiUtils.isRed(hasGo ? board[toI][toJ] : board[fromI][fromJ]);
-        char pos = getPos(fromJ, isRed);
-        sb.append(isRed ? map.get(pos) : pos);
-        if (fromI == toI && fromJ != toJ) {
-            sb.append("平");
-            pos = getPos(toJ, isRed);
-            sb.append(isRed ? map.get(pos) : pos);
-        } else if (fromI != toI && fromJ == toJ) {
-            if (isRed) {
-                sb.append(fromI > toI ? "进" : "退");
-            } else {
-                sb.append(fromI < toI ? "进" : "退");
-            }
-            pos = (char) ('０' + (Math.abs(fromI - toI)));
-            sb.append(isRed ? map.get(pos) : pos);
-        } else {
-            if (isRed) {
-                sb.append(fromI > toI ? "进" : "退");
-            } else {
-                sb.append(fromI < toI ? "进" : "退");
-            }
-            pos = getPos(toJ, isRed);
-            sb.append(isRed ? map.get(pos) : pos);
-        }
-        sb.append("  ");
-        copyBoard[toI][toJ] = copyBoard[fromI][fromJ];
-        copyBoard[fromI][fromJ] = ' ';
-    }
-
-    private char getPos(int j, boolean isRed) {
-        if (isRed) {
-            return (char) ('０' + 9 - j);
-        } else {
-            return (char) ('０' + j + 1);
-        }
-    }
-
-    public void autoFitSize(double width, double height, double position, boolean showStatusBar) {
+    public void autoFitSize(double width, double height, double position) {
         if (boardSize == BoardSize.AUTOFIT_BOARD) {
+            if (Properties.getInstance().isShowChessNotation()) {
+                width = width - 240;
+            }
             position = Math.abs(position);
             width = width * position;
             height = height - 56;
-            if (showStatusBar) {
+            if (Properties.getInstance().isLinkShowInfo()) {
                 height = height - 27;
             }
             int pieceSize;

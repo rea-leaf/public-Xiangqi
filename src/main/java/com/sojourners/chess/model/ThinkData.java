@@ -37,6 +37,7 @@ public class ThinkData {
         // 生成title
         StringBuilder sb = new StringBuilder();
         sb.append("深度: ").append(depth).append("  ");
+        if (pv == null) pv = 1;
         sb.append("PV: ").append(pv).append("  ");
         boolean f = false;
         if (score == null) {
@@ -51,7 +52,9 @@ public class ThinkData {
             score = -score;
         }
         sb.append(score).append(f ? "步  " : "  ");
+        if (nps == null) nps = 0L;
         sb.append("NPS: ").append(nps / 1000).append("K  ");
+        if (time == null) time = 0L;
         sb.append("时间: ").append(String.format("%.1fs", time / 1000D));
         title = sb.toString();
         // 生成body

@@ -40,7 +40,7 @@ public class DefaultBoardRender extends BaseBoardRender {
         int r = (piece - piece / 10) / 2;
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
-                String word = ChessBoard.map.get(board[i][j]);
+                String word = XiangqiUtils.map.get(board[i][j]);
                 if (word != null) {
                     int x = pos + piece * getReverseX(j, isReverse);
                     int y = pos + piece * getReverseY(i, isReverse);

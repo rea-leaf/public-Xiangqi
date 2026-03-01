@@ -43,4 +43,13 @@ public class PathUtils {
         }
         return false;
     }
+
+    public static String getDotExtension(File file) {
+        String name = file.getName();
+        int idx = name.lastIndexOf('.');
+        if (idx > 0 && idx < name.length() - 1) {
+            return name.substring(idx + 1);
+        }
+        return "";
+    }
 }

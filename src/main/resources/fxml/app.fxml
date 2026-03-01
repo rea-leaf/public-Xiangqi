@@ -17,12 +17,19 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.text.Font?>
 
-<BorderPane fx:id="borderPane" minHeight="0.0" minWidth="0.0" prefHeight="712.0" prefWidth="924.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sojourners.chess.controller.Controller">
+<BorderPane fx:id="borderPane" minHeight="0.0" minWidth="0.0" prefHeight="712.0" prefWidth="1169.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sojourners.chess.controller.Controller">
    <top>
       <MenuBar BorderPane.alignment="CENTER">
         <menus>
@@ -41,6 +48,16 @@
                   <MenuItem mnemonicParsing="false" onAction="#pasteImageMenuClick" text="粘贴局面图片" />
                   <MenuItem mnemonicParsing="false" onAction="#importImageMenuClick" text="图片导入局面" />
                   <MenuItem mnemonicParsing="false" onAction="#exportImageMenuClick" text="局面导出图片" />
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="棋谱">
+               <items>
+                  <MenuItem mnemonicParsing="false" onAction="#newButtonClick" text="新棋谱" />
+                  <MenuItem mnemonicParsing="false" onAction="#openChessManualFile" text="打开棋谱" />
+                  <MenuItem mnemonicParsing="false" onAction="#saveChessManualFile" text="保存棋谱" />
+                  <MenuItem mnemonicParsing="false" onAction="#saveAsChessManualFile" text="另存为棋谱" />
+                  <CheckMenuItem fx:id="menuOfChessNotation" mnemonicParsing="false" text="棋谱管理" />
+                  <CheckMenuItem fx:id="menuOfShowTactic" mnemonicParsing="false" onAction="#menuOfShowTacticClick" text="显示分支棋步" />
                </items>
             </Menu>
             <Menu mnemonicParsing="false" text="开局库">
@@ -113,7 +130,8 @@
                 <Button fx:id="newButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#newButtonClick" style="-fx-background-image: url('/image/file-plus.png');" stylesheets="@../style/app.css" text="新建">
                      <opaqueInsets>
                         <Insets />
-                     </opaqueInsets></Button>
+                     </opaqueInsets>
+                  </Button>
                   <Button fx:id="copyButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#copyButtonClick" style="-fx-background-image: url('/image/copy.png');" stylesheets="@../style/app.css" text="Button">
                      <opaqueInsets>
                         <Insets />
@@ -125,7 +143,18 @@
                      </opaqueInsets>
                   </Button>
                   <Separator orientation="VERTICAL" prefHeight="200.0" />
-                  <Button fx:id="backButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#regretButtonClick" style="-fx-background-image: url('/image/back.png');" stylesheets="@../style/app.css" text="Button">
+                  <Button fx:id="openManualButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#openChessManualFile" style="-fx-background-image: url('/image/open.png');" stylesheets="@../style/app.css" text="Button">
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                  </Button>
+                  <Button fx:id="saveManualButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#saveChessManualFile" style="-fx-background-image: url('/image/save.png');" stylesheets="@../style/app.css" text="Button">
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                  </Button>
+                  <Separator orientation="VERTICAL" prefHeight="200.0" />
+                  <Button fx:id="regretButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#regretButtonClick" style="-fx-background-image: url('/image/back.png');" stylesheets="@../style/app.css" text="Button">
                      <opaqueInsets>
                         <Insets />
                      </opaqueInsets>
@@ -224,25 +253,68 @@
                                         <Tab text="棋谱">
                                              <content>
                                                 <BorderPane prefHeight="200.0" prefWidth="200.0">
-                                                   <center>
-                                                      <TableView fx:id="recordTable" onMouseClicked="#recordTableClick" prefHeight="200.0" prefWidth="200.0" style="-fx-background-insets: 100%;" stylesheets="@../style/table.css" BorderPane.alignment="CENTER">
-                                                        <columns>
-                                                          <TableColumn editable="false" prefWidth="60.0" sortable="false" text="序号" />
-                                                          <TableColumn editable="false" prefWidth="120.0" sortable="false" text="着法" />
-                                                            <TableColumn editable="false" prefWidth="90.0" sortable="false" text="分数" />
-                                                        </columns>
-                                                      </TableView>
-                                                   </center>
                                                    <bottom>
-                                                      <ToolBar minHeight="-Infinity" minWidth="-Infinity" nodeOrientation="RIGHT_TO_LEFT" prefHeight="28.0" prefWidth="200.0" style="-fx-background-insets: 28px;" BorderPane.alignment="CENTER">
+                                                      <ToolBar minHeight="-Infinity" minWidth="80.0" nodeOrientation="RIGHT_TO_LEFT" prefHeight="28.0" prefWidth="100.0" style="-fx-background-insets: 28px;" BorderPane.alignment="CENTER">
                                                         <items>
-                                                          <Button contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#finalButtonClick" prefHeight="24.0" prefWidth="24.0" style="-fx-background-image: url('/image/arrow-double-left.png');" stylesheets="@../style/app.css" text="Button" />
-                                                            <Button contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#forwardButtonClick" prefHeight="24.0" prefWidth="24.0" style="-fx-background-image: url('/image/arrow-left.png');" stylesheets="@../style/app.css" text="Button" />
-                                                            <Button contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#backButtonClick" prefHeight="24.0" prefWidth="24.0" style="-fx-background-image: url('/image/arrow-right.png');" stylesheets="@../style/app.css" text="Button" />
-                                                            <Button contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#frontButtonClick" prefHeight="24.0" prefWidth="24.0" style="-fx-background-image: url('/image/arrow-double-right.png');" stylesheets="@../style/app.css" text="Button" />
+                                                            <Button fx:id="manualDeleteButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#deleteButtonClick" prefHeight="24.0" prefWidth="24.0" style="-fx-background-image: url('/image/delete.png');" stylesheets="@../style/app.css" text="Button" />
+                                                            <Button fx:id="manualScoreButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" nodeOrientation="LEFT_TO_RIGHT" onAction="#scoreButtonClick" prefHeight="24.0" prefWidth="24.0" style="-fx-background-image: url('/image/score.png');" stylesheets="@../style/app.css" text="Button" />
+                                                            <Button fx:id="manualPlayButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" nodeOrientation="LEFT_TO_RIGHT" onAction="#playButtonClick" prefHeight="24.0" prefWidth="24.0" style="-fx-background-image: url('/image/play.png');" stylesheets="@../style/app.css" text="Button" />
+                                                            <Button fx:id="manualDownButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#downwardButtonClick" prefHeight="24.0" prefWidth="24.0" style="-fx-background-image: url('/image/down-arrow.png');" stylesheets="@../style/app.css" text="Button" />
+                                                            <Button fx:id="manualUpButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#upwardButtonClick" prefHeight="24.0" prefWidth="24.0" style="-fx-background-image: url('/image/up-arrow.png');" stylesheets="@../style/app.css" text="Button" />
+                                                          <Button fx:id="manualFinalButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#finalButtonClick" prefHeight="24.0" prefWidth="24.0" style="-fx-background-image: url('/image/arrow-double-left.png');" stylesheets="@../style/app.css" text="Button" />
+                                                            <Button fx:id="manualForwardButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#forwardButtonClick" prefHeight="24.0" prefWidth="24.0" style="-fx-background-image: url('/image/arrow-left.png');" stylesheets="@../style/app.css" text="Button" />
+                                                            <Button fx:id="manualBackButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#backButtonClick" prefHeight="24.0" prefWidth="24.0" style="-fx-background-image: url('/image/arrow-right.png');" stylesheets="@../style/app.css" text="Button" />
+                                                            <Button fx:id="manualFrontButton" contentDisplay="GRAPHIC_ONLY" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#frontButtonClick" prefHeight="24.0" prefWidth="24.0" style="-fx-background-image: url('/image/arrow-double-right.png');" stylesheets="@../style/app.css" text="Button" />
                                                         </items>
                                                       </ToolBar>
                                                    </bottom>
+                                                   <center>
+                                                      <SplitPane dividerPositions="0.6" prefHeight="160.0" prefWidth="200.0" stylesheets="@../style/split-pane-one.css" BorderPane.alignment="CENTER">
+                                                        <items>
+                                                            <TableView fx:id="recordTable" onMouseClicked="#recordTableClick" style="-fx-background-insets: 100%;" stylesheets="@../style/table.css">
+                                                              <columns>
+                                                                <TableColumn editable="false" prefWidth="50.0" sortable="false" text="序号" />
+                                                                <TableColumn editable="false" prefWidth="95.0" sortable="false" text="着法" />
+                                                                  <TableColumn editable="false" prefWidth="60.0" sortable="false" text="分数" />
+                                                              </columns>
+                                                            </TableView>
+                                                            <SplitPane dividerPositions="0.6" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" stylesheets="@../style/split-pane-zero.css">
+                                                              <items>
+                                                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+                                                                     <children>
+                                                                        <BorderPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                                           <top>
+                                                                              <Label text="注解:" BorderPane.alignment="CENTER_LEFT" />
+                                                                           </top>
+                                                                           <center>
+                                                                              <TextArea fx:id="remarkText" wrapText="true" BorderPane.alignment="CENTER" />
+                                                                           </center>
+                                                                        </BorderPane>
+                                                                     </children>
+                                                                     <padding>
+                                                                        <Insets bottom="1.0" left="4.0" right="4.0" top="4.0" />
+                                                                     </padding>
+                                                                  </AnchorPane>
+                                                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+                                                                     <children>
+                                                                        <BorderPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                                           <top>
+                                                                              <Label text="变招列表:" BorderPane.alignment="CENTER_LEFT" />
+                                                                           </top>
+                                                                           <center>
+                                                                              <ListView fx:id="subRecordTable" stylesheets="@../style/selection.css" BorderPane.alignment="CENTER" />
+                                                                           </center>
+                                                                        </BorderPane>
+                                                                     </children>
+                                                                     <padding>
+                                                                        <Insets bottom="4.0" left="4.0" right="4.0" top="1.0" />
+                                                                     </padding>
+                                                                  </AnchorPane>
+                                                              </items>
+                                                            </SplitPane>
+                                                        </items>
+                                                      </SplitPane>
+                                                   </center>
                                                 </BorderPane>
                                              </content>
                                         </Tab>
@@ -282,4 +354,103 @@
          </center>
       </BorderPane>
    </center>
+   <left>
+      <BorderPane fx:id="chessManualPane" BorderPane.alignment="CENTER">
+         <center>
+            <TreeView fx:id="notationTree" prefHeight="200.0" prefWidth="240.0" style="-fx-padding: 8 5 8 5;" stylesheets="@../style/app.css" BorderPane.alignment="CENTER" />
+         </center>
+         <top>
+            <ToolBar minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+               <items>
+                  <Button maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#openChessManualFolder" prefWidth="225.0" style="-fx-pref-width: 225; -fx-border-style: solid; -fx-border-color: #C0C0C0; -fx-border-radius: 5px;" stylesheets="@../style/app.css" text="选择棋谱目录">
+                     <font>
+                        <Font size="12.0" />
+                     </font>
+                  </Button>
+               </items>
+            </ToolBar>
+         </top>
+         <bottom>
+            <BorderPane prefHeight="220.0" prefWidth="240.0" style="-fx-background-color: #F4F4F4;" BorderPane.alignment="CENTER">
+               <bottom>
+                  <ToolBar minHeight="-Infinity" minWidth="-Infinity" prefHeight="28.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                     <items>
+                        <Label fx:id="manualTitleLabel" alignment="CENTER" contentDisplay="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="28.0" prefWidth="225.0" />
+                     </items>
+                  </ToolBar>
+               </bottom>
+               <center>
+                  <GridPane style="-fx-background-color: #F4F4F4;">
+                    <columnConstraints>
+                      <ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES" maxWidth="116.0" minWidth="10.0" prefWidth="78.0" />
+                      <ColumnConstraints hgrow="SOMETIMES" maxWidth="163.0" minWidth="10.0" prefWidth="162.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                     <children>
+                        <Label alignment="CENTER" text="比赛名:  ">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </Label>
+                        <Label text="比赛地点:  " GridPane.rowIndex="1">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </Label>
+                        <Label text="比赛日期:  " GridPane.rowIndex="2">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </Label>
+                        <Label text="红方棋手:  " GridPane.rowIndex="3">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </Label>
+                        <Label text="黑方棋手:  " GridPane.rowIndex="4">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </Label>
+                        <TextField fx:id="competitionNameText" GridPane.columnIndex="1">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </TextField>
+                        <TextField fx:id="competitionCityText" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </TextField>
+                        <TextField fx:id="competitionDateText" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </TextField>
+                        <TextField fx:id="competitionRedText" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </TextField>
+                        <TextField fx:id="competitionBlackText" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </TextField>
+                     </children>
+                     <BorderPane.margin>
+                        <Insets bottom="18.0" left="8.0" right="18.0" top="12.0" />
+                     </BorderPane.margin>
+                  </GridPane>
+               </center>
+            </BorderPane>
+         </bottom>
+      </BorderPane>
+   </left>
 </BorderPane>
