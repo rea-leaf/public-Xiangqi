@@ -80,6 +80,13 @@ public class Properties implements Serializable {
     private int bookDelayStart = 0;
     private int bookDelayEnd = 0;
 
+    private int autoBattleOpeningMinTime = 1;
+    private int autoBattleOpeningMaxTime = 30;
+    private int autoBattleMiddleMinTime = 10;
+    private int autoBattleMiddleMaxTime = 60;
+    private int autoBattleEndMinTime = 40;
+    private int autoBattleEndMaxTime = 90;
+
     private int mouseClickDelay = 2;
     private int mouseMoveDelay = 0;
     /*
@@ -159,8 +166,55 @@ public class Properties implements Serializable {
                     e.printStackTrace();
                 }
             }
+            normalizeAutoBattleTime(prop);
         }
         return prop;
+    }
+
+    private static void normalizeAutoBattleTime(Properties prop) {
+        if (prop == null) {
+            return;
+        }
+        // 兼容旧版本序列化字段缺失：缺失时会反序列化为 0，这里回填默认区间。
+        if (prop.autoBattleOpeningMinTime <= 1 && prop.autoBattleOpeningMaxTime <= 1) {
+            prop.autoBattleOpeningMinTime = 1;
+            prop.autoBattleOpeningMaxTime = 30;
+        }
+        if (prop.autoBattleMiddleMinTime <= 1 && prop.autoBattleMiddleMaxTime <= 1) {
+            prop.autoBattleMiddleMinTime = 10;
+            prop.autoBattleMiddleMaxTime = 60;
+        }
+        if (prop.autoBattleEndMinTime <= 1 && prop.autoBattleEndMaxTime <= 1) {
+            prop.autoBattleEndMinTime = 40;
+            prop.autoBattleEndMaxTime = 90;
+        }
+
+        prop.autoBattleOpeningMinTime = clampAutoBattleTime(prop.autoBattleOpeningMinTime);
+        prop.autoBattleOpeningMaxTime = clampAutoBattleTime(prop.autoBattleOpeningMaxTime);
+        prop.autoBattleMiddleMinTime = clampAutoBattleTime(prop.autoBattleMiddleMinTime);
+        prop.autoBattleMiddleMaxTime = clampAutoBattleTime(prop.autoBattleMiddleMaxTime);
+        prop.autoBattleEndMinTime = clampAutoBattleTime(prop.autoBattleEndMinTime);
+        prop.autoBattleEndMaxTime = clampAutoBattleTime(prop.autoBattleEndMaxTime);
+
+        if (prop.autoBattleOpeningMinTime > prop.autoBattleOpeningMaxTime) {
+            prop.autoBattleOpeningMaxTime = prop.autoBattleOpeningMinTime;
+        }
+        if (prop.autoBattleMiddleMinTime > prop.autoBattleMiddleMaxTime) {
+            prop.autoBattleMiddleMaxTime = prop.autoBattleMiddleMinTime;
+        }
+        if (prop.autoBattleEndMinTime > prop.autoBattleEndMaxTime) {
+            prop.autoBattleEndMaxTime = prop.autoBattleEndMinTime;
+        }
+    }
+
+    private static int clampAutoBattleTime(int value) {
+        if (value < 1) {
+            return 1;
+        }
+        if (value > 90) {
+            return 90;
+        }
+        return value;
     }
 
     public void save() {
@@ -221,6 +275,54 @@ public class Properties implements Serializable {
 
     public void setBookDelayEnd(int bookDelayEnd) {
         this.bookDelayEnd = bookDelayEnd;
+    }
+
+    public int getAutoBattleOpeningMinTime() {
+        return autoBattleOpeningMinTime;
+    }
+
+    public void setAutoBattleOpeningMinTime(int autoBattleOpeningMinTime) {
+        this.autoBattleOpeningMinTime = clampAutoBattleTime(autoBattleOpeningMinTime);
+    }
+
+    public int getAutoBattleOpeningMaxTime() {
+        return autoBattleOpeningMaxTime;
+    }
+
+    public void setAutoBattleOpeningMaxTime(int autoBattleOpeningMaxTime) {
+        this.autoBattleOpeningMaxTime = clampAutoBattleTime(autoBattleOpeningMaxTime);
+    }
+
+    public int getAutoBattleMiddleMinTime() {
+        return autoBattleMiddleMinTime;
+    }
+
+    public void setAutoBattleMiddleMinTime(int autoBattleMiddleMinTime) {
+        this.autoBattleMiddleMinTime = clampAutoBattleTime(autoBattleMiddleMinTime);
+    }
+
+    public int getAutoBattleMiddleMaxTime() {
+        return autoBattleMiddleMaxTime;
+    }
+
+    public void setAutoBattleMiddleMaxTime(int autoBattleMiddleMaxTime) {
+        this.autoBattleMiddleMaxTime = clampAutoBattleTime(autoBattleMiddleMaxTime);
+    }
+
+    public int getAutoBattleEndMinTime() {
+        return autoBattleEndMinTime;
+    }
+
+    public void setAutoBattleEndMinTime(int autoBattleEndMinTime) {
+        this.autoBattleEndMinTime = clampAutoBattleTime(autoBattleEndMinTime);
+    }
+
+    public int getAutoBattleEndMaxTime() {
+        return autoBattleEndMaxTime;
+    }
+
+    public void setAutoBattleEndMaxTime(int autoBattleEndMaxTime) {
+        this.autoBattleEndMaxTime = clampAutoBattleTime(autoBattleEndMaxTime);
     }
 
     public int getMouseClickDelay() {

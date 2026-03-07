@@ -54,6 +54,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 主界面控制器。
@@ -196,6 +197,17 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
      * 正在思考（用于连线判断）
      */
     private volatile boolean isThinking;
+
+    private static final int AUTO_BATTLE_MIN_TIME = 1000;
+    private static final int AUTO_BATTLE_MAX_TIME = 90000;
+    private static final int AUTO_BATTLE_OPENING_SPLIT = 24;
+    private static final int AUTO_BATTLE_MIDDLE_SPLIT = 80;
+
+    private long lastHumanThinkTime = -1L;
+    private int lastComplexityBand = -1;
+    private int sameComplexityBandStreak = 0;
+    private int redComboStreak = 0;
+    private int blackComboStreak = 0;
 
     /**
      * 变招列表
@@ -447,8 +459,200 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
         engine.setThreadNum(prop.getThreadNum());
         engine.setHashSize(prop.getHashSize());
-        engine.setAnalysisModel(robotAnalysis.getValue() ? Engine.AnalysisModel.INFINITE : prop.getAnalysisModel(), prop.getAnalysisValue());
-        engine.analysis(chessManualHandle.getFenCode(), chessManualHandle.getMoveList(), this.board.getBoard(), redGo);
+        Engine.AnalysisModel model = robotAnalysis.getValue() ? Engine.AnalysisModel.INFINITE : prop.getAnalysisModel();
+        long value = prop.getAnalysisValue();
+        boolean autoBattle = !robotAnalysis.getValue() && robotRed.getValue() && robotBlack.getValue();
+        if (autoBattle) {
+            model = Engine.AnalysisModel.FIXED_TIME;
+            value = nextHumanLikeThinkTime(redGo);
+            if (prop.isLinkShowInfo()) {
+                timeShowLabel.setText("自动对弈思考" + value / 1000d + "s");
+            }
+        }
+        engine.setAnalysisModel(model, value);
+        if (autoBattle) {
+            // 自动对弈时跳过库招，确保每步都按随机 movetime 真正思考。
+            engine.analysis(chessManualHandle.getFenCode(), chessManualHandle.getMoveList(), (List<String>) null);
+        } else {
+            engine.analysis(chessManualHandle.getFenCode(), chessManualHandle.getMoveList(), this.board.getBoard(), redGo);
+        }
+    }
+
+    private long nextHumanLikeThinkTime(boolean currentRedGo) {
+        int ply = chessManualHandle.getP();
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+
+        int stageMin;
+        int stageMax;
+        if (ply < AUTO_BATTLE_OPENING_SPLIT) {
+            stageMin = prop.getAutoBattleOpeningMinTime();
+            stageMax = prop.getAutoBattleOpeningMaxTime();
+        } else if (ply < AUTO_BATTLE_MIDDLE_SPLIT) {
+            stageMin = prop.getAutoBattleMiddleMinTime();
+            stageMax = prop.getAutoBattleMiddleMaxTime();
+        } else {
+            stageMin = prop.getAutoBattleEndMinTime();
+            stageMax = prop.getAutoBattleEndMaxTime();
+        }
+
+        long minRange = Math.max(AUTO_BATTLE_MIN_TIME, stageMin * 1000L);
+        long maxRange = Math.min(AUTO_BATTLE_MAX_TIME, stageMax * 1000L);
+        if (minRange > maxRange) {
+            maxRange = minRange;
+        }
+        long range = maxRange - minRange;
+        double complexity = estimatePositionComplexity(currentRedGo);
+        int complexityBand = complexity < 0.38d ? 0 : complexity < 0.62d ? 1 : 2;
+        if (complexityBand == lastComplexityBand) {
+            sameComplexityBandStreak++;
+        } else {
+            sameComplexityBandStreak = 1;
+            lastComplexityBand = complexityBand;
+        }
+
+        // 复杂局面更靠近区间上沿，简单局面更靠近下沿。
+        double targetRatio = 0.35d + complexity * 0.45d;
+        // 双方设置轻微风格差异：红方稍稳，黑方稍快。
+        targetRatio += currentRedGo ? 0.04d : -0.04d;
+        targetRatio = clamp(targetRatio, 0.10d, 0.95d);
+
+        long target = minRange + (long) (range * targetRatio);
+        long jitter = Math.max(1000L, range / 6L);
+        long jitterValue = random.nextLong(-jitter, jitter + 1L);
+        long think = target + jitterValue;
+
+        // 简单局面更容易快速出手，复杂局面降低短考概率。
+        int quickProb;
+        if (complexity >= 0.65d) {
+            quickProb = 2;
+        } else if (complexity >= 0.45d) {
+            quickProb = 5;
+        } else {
+            quickProb = 12;
+        }
+        if (random.nextInt(100) < quickProb) {
+            long shortMax = Math.min(maxRange, minRange + Math.max(5000L, range / 4L));
+            think = random.nextLong(minRange, shortMax + 1L);
+        }
+
+        // 复杂局面增加“长考”概率，更像真人纠结关键步。
+        if (complexity >= 0.60d && random.nextInt(100) < 28) {
+            long longMin = minRange + (long) (range * 0.70d);
+            if (longMin < maxRange) {
+                think = random.nextLong(longMin, maxRange + 1L);
+            }
+        }
+
+        // 连招节奏：同一方连续打出将军/吃子等强制手时，下一手通常更快。
+        int comboStreak = currentRedGo ? redComboStreak : blackComboStreak;
+        if (comboStreak > 0) {
+            // 稳健型：连招只做轻度提速，保留足够思考。
+            double comboReduce = Math.min(0.12d, comboStreak * 0.04d);
+            // 复杂局面保留更多思考，不把节奏压得过快。
+            comboReduce *= (1.0d - complexity * 0.5d);
+            think = (long) (think * (1.0d - comboReduce));
+        }
+
+        // 同类局面连续出现时，思考时间逐步收敛，避免每步波动过大。
+        if (lastHumanThinkTime > 0) {
+            double smooth = Math.min(0.65d, sameComplexityBandStreak * 0.12d);
+            think = (long) (think * (1.0d - smooth) + lastHumanThinkTime * smooth);
+        }
+
+        if (think < AUTO_BATTLE_MIN_TIME) {
+            think = AUTO_BATTLE_MIN_TIME;
+        } else if (think > AUTO_BATTLE_MAX_TIME) {
+            think = AUTO_BATTLE_MAX_TIME;
+        }
+        lastHumanThinkTime = think;
+        return think;
+    }
+
+    private double estimatePositionComplexity(boolean currentRedGo) {
+        char[][] boardState = board.getBoard();
+        boolean inCheck = XiangqiUtils.isJiang(boardState, currentRedGo);
+        int legalMoves = 0;
+        int captureMoves = 0;
+        int checkMoves = 0;
+        int pieces = 0;
+
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 9; j++) {
+                char piece = boardState[i][j];
+                if (piece == ' ') {
+                    continue;
+                }
+                pieces++;
+                if (XiangqiUtils.isRed(piece) != currentRedGo) {
+                    continue;
+                }
+
+                for (int i2 = 0; i2 < 10; i2++) {
+                    for (int j2 = 0; j2 < 9; j2++) {
+                        if ((i != i2 || j != j2) && XiangqiUtils.canGo(boardState, i, j, i2, j2)) {
+                            char eaten = boardState[i2][j2];
+                            boardState[i2][j2] = boardState[i][j];
+                            boardState[i][j] = ' ';
+
+                            boolean selfCheck = XiangqiUtils.isJiang(boardState, currentRedGo);
+                            if (!selfCheck) {
+                                legalMoves++;
+                                if (eaten != ' ') {
+                                    captureMoves++;
+                                }
+                                if (XiangqiUtils.isJiang(boardState, !currentRedGo)) {
+                                    checkMoves++;
+                                }
+                            }
+
+                            boardState[i][j] = boardState[i2][j2];
+                            boardState[i2][j2] = eaten;
+                        }
+                    }
+                }
+            }
+        }
+
+        double complexity = 0.30d;
+        if (inCheck) {
+            complexity += 0.35d;
+        }
+        if (legalMoves <= 8) {
+            complexity += 0.32d;
+        } else if (legalMoves <= 16) {
+            complexity += 0.20d;
+        } else if (legalMoves >= 34) {
+            complexity -= 0.10d;
+        }
+        if (captureMoves >= 5) {
+            complexity += 0.18d;
+        } else if (captureMoves >= 2) {
+            complexity += 0.10d;
+        } else {
+            complexity -= 0.06d;
+        }
+        if (checkMoves >= 2) {
+            complexity += 0.15d;
+        } else if (checkMoves == 0) {
+            complexity -= 0.05d;
+        }
+        if (pieces <= 10) {
+            complexity += 0.12d;
+        } else if (pieces >= 24) {
+            complexity -= 0.05d;
+        }
+
+        return clamp(complexity, 0.05d, 0.95d);
+    }
+
+    private double clamp(double value, double min, double max) {
+        if (value < min) {
+            return min;
+        }
+        if (value > max) {
+            return max;
+        }
+        return value;
     }
 
     @FXML
@@ -943,6 +1147,11 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         robotAnalysis.setValue(false);
         immediateButton.setDisable(false);
         isReverse.setValue(false);
+        lastHumanThinkTime = -1L;
+        lastComplexityBand = -1;
+        sameComplexityBandStreak = 0;
+        redComboStreak = 0;
+        blackComboStreak = 0;
         // 引擎停止计算
         engineStop();
         // 绘制棋盘
@@ -1142,37 +1351,131 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
      * 连线模式下自动点击走棋
      * @param step
      */
-    private void trickAutoClick(ChessBoard.Step step) {
-        if (step != null) {
-            int x1 = step.getStart().getX(), y1 = step.getStart().getY();
-            int x2 = step.getEnd().getX(), y2 = step.getEnd().getY();
-            if (robotBlack.getValue()) {
-                y1 = 9 - y1;
-                y2 = 9 - y2;
-                x1 = 8 - x1;
-                x2 = 8 - x2;
-            }
-            graphLinker.autoClick(x1, y1, x2, y2);
+    private void trickAutoClick(ChessBoard.Step step, long pauseMs) {
+        if (step == null || !linkMode.getValue() || isWatchMode()) {
+            this.isThinking = false;
+            return;
         }
-        this.isThinking = false;
+        int x1 = step.getStart().getX(), y1 = step.getStart().getY();
+        int x2 = step.getEnd().getX(), y2 = step.getEnd().getY();
+        // 自动走棋模式下按当前执棋方决定是否翻转坐标。
+        if (robotBlack.getValue()) {
+            y1 = 9 - y1;
+            y2 = 9 - y2;
+            x1 = 8 - x1;
+            x2 = 8 - x2;
+        }
+        final int fx1 = x1, fy1 = y1, fx2 = x2, fy2 = y2;
+        final long delay = Math.max(0L, pauseMs);
+        Thread.startVirtualThread(() -> {
+            if (delay > 0) {
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            graphLinker.autoClick(fx1, fy1, fx2, fy2);
+            this.isThinking = false;
+        });
+    }
+
+    private long calculateHumanClickPauseMs(ChessBoard.Step step) {
+        if (step == null) {
+            return 0;
+        }
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        char[][] b = board.getBoard();
+        int x1 = step.getStart().getX(), y1 = step.getStart().getY();
+        int x2 = step.getEnd().getX(), y2 = step.getEnd().getY();
+        char moving = b[y1][x1];
+        char captured = b[y2][x2];
+        if (moving == ' ') {
+            return random.nextLong(200, 500);
+        }
+        boolean red = XiangqiUtils.isRed(moving);
+        int comboStreak = red ? redComboStreak : blackComboStreak;
+
+        char tmp = b[y2][x2];
+        b[y2][x2] = moving;
+        b[y1][x1] = ' ';
+        boolean check = XiangqiUtils.isJiang(b, !red);
+        b[y1][x1] = moving;
+        b[y2][x2] = tmp;
+
+        if (check || captured != ' ') {
+            long pause = random.nextLong(650, 1300);
+            if (comboStreak > 0) {
+                pause = (long) (pause * Math.max(0.86d, 1.0d - comboStreak * 0.04d));
+            }
+            return pause;
+        }
+        char lower = Character.toLowerCase(moving);
+        if (lower == 'r' || lower == 'c' || lower == 'n') {
+            long pause = random.nextLong(360, 820);
+            if (comboStreak > 0) {
+                pause = (long) (pause * Math.max(0.86d, 1.0d - comboStreak * 0.04d));
+            }
+            return pause;
+        }
+        long pause = random.nextLong(180, 520);
+        if (comboStreak > 0) {
+            pause = (long) (pause * Math.max(0.86d, 1.0d - comboStreak * 0.04d));
+        }
+        return pause;
+    }
+
+    private boolean isTacticalMove(ChessBoard.Step step) {
+        if (step == null) {
+            return false;
+        }
+        char[][] b = board.getBoard();
+        int x1 = step.getStart().getX(), y1 = step.getStart().getY();
+        int x2 = step.getEnd().getX(), y2 = step.getEnd().getY();
+        char moving = b[y1][x1];
+        if (moving == ' ') {
+            return false;
+        }
+        char captured = b[y2][x2];
+        boolean red = XiangqiUtils.isRed(moving);
+
+        b[y2][x2] = moving;
+        b[y1][x1] = ' ';
+        boolean check = XiangqiUtils.isJiang(b, !red);
+        b[y1][x1] = moving;
+        b[y2][x2] = captured;
+
+        return captured != ' ' || check;
+    }
+
+    private void updateComboRhythm(boolean moverRed, boolean tactical) {
+        if (moverRed) {
+            redComboStreak = tactical ? Math.min(4, redComboStreak + 1) : Math.max(0, redComboStreak - 1);
+        } else {
+            blackComboStreak = tactical ? Math.min(4, blackComboStreak + 1) : Math.max(0, blackComboStreak - 1);
+        }
     }
 
     @Override
     public void bestMove(String first, String second) {
         if (redGo && robotRed.getValue() || !redGo && robotBlack.getValue()) {
+            boolean moverRed = redGo;
             ChessBoard.Step s = board.stepForBoard(first);
+            boolean tactical = isTacticalMove(s);
+            long clickPause = calculateHumanClickPauseMs(s);
 
             Platform.runLater(() -> {
                 // 一切 UI 操作都在 JavaFX 线程执行，避免跨线程 UI 访问异常。
                 board.move(s.getStart().getX(), s.getStart().getY(), s.getEnd().getX(), s.getEnd().getY());
                 board.setTip(second, null, 1);
 
-                goCallBack(first);
-            });
+                if (linkMode.getValue()) {
+                    trickAutoClick(s, clickPause);
+                }
 
-            if (linkMode.getValue()) {
-                trickAutoClick(s);
-            }
+                goCallBack(first);
+                updateComboRhythm(moverRed, tactical);
+            });
         }
     }
 
@@ -1443,12 +1746,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         // 趋势图
         refreshLineChart();
         // 引擎走棋
-        if (robotRed.getValue() && robotBlack.getValue()) {
-            // 如果引擎执红同时执黑，取消状态（否则会有问题）
-            robotRed.setValue(false);
-            robotBlack.setValue(false);
-            engineStop();
-        } else if (redGo && robotRed.getValue() || !redGo && robotBlack.getValue() || robotAnalysis.getValue()) {
+        if (redGo && robotRed.getValue() || !redGo && robotBlack.getValue() || robotAnalysis.getValue()) {
             // 轮到引擎走棋或者分析模式
             engineGo();
         } else {

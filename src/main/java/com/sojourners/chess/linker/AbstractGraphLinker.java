@@ -49,6 +49,13 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
     /** 暂停扫描标记（局面切换时短暂停顿）。 */
     private volatile boolean pause;
 
+    /**
+     * 自动点击后的等待锁：
+     * 防止同一手未在目标平台落稳前被重复识别并重复点击，导致界面闪烁。
+     */
+    private volatile boolean pendingAutoMove;
+    private volatile long pendingAutoMoveUntil;
+
     private Properties prop;
 
     public AbstractGraphLinker(LinkerCallBack callBack) throws AWTException {
@@ -58,6 +65,8 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
         this.aiModel = new Yolo11Model();
         this.prop = Properties.getInstance();
         this.pause = false;
+        this.pendingAutoMove = false;
+        this.pendingAutoMoveUntil = 0L;
     }
 
     /**
@@ -126,6 +135,20 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
                         continue;
                     }
 
+                    // 自动点击后先等待目标平台棋盘收敛，避免重复点击同一步。
+                    if (pendingAutoMove) {
+                        if (isSame(board2, callBack.getEngineBoard())) {
+                            pendingAutoMove = false;
+                            pendingAutoMoveUntil = 0L;
+                            continue;
+                        }
+                        if (System.currentTimeMillis() < pendingAutoMoveUntil) {
+                            continue;
+                        }
+                        pendingAutoMove = false;
+                        pendingAutoMoveUntil = 0L;
+                    }
+
                     if (isSame(board2, callBack.getEngineBoard())) {
                         continue;
                     }
@@ -166,14 +189,8 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
                             callBack.linkerMove(action.x1, action.y1, action.x2, action.y2);
 
                         } else if (action.flag == 2) {
-                            // 引擎已走棋：同步到外部平台（自动点击）。
-                            if (isReverse) {
-                                action.y1 = 9 - action.y1;
-                                action.y2 = 9 - action.y2;
-                                action.x1 = 8 - action.x1;
-                                action.x2 = 8 - action.x2;
-                            }
-                            autoClick(action.x1, action.y1, action.x2, action.y2);
+                            // 引擎已走棋：自动走棋模式下由 Controller.bestMove 触发点击，
+                            // 扫描线程不再重复点击，避免“只选中不落子”的重复干扰。
 
                         } else if (action.flag == 3) {
                             // 明确识别到新棋局：退出内循环并重新初始化。
@@ -452,24 +469,20 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
     public void mouseClickByFront(Rectangle windowPos, Point p1, Point p2) {
 
         Point mouse = MouseInfo.getPointerInfo().getLocation();
+        int clickDelay = Math.max(prop.getMouseClickDelay(), 30);
+        int moveDelay = Math.max(prop.getMouseMoveDelay(), 120);
 
         robot.mouseMove(windowPos.x + p1.x, windowPos.y+ p1.y);
 
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        if (prop.getMouseClickDelay() > 0) {
-            robot.delay(prop.getMouseClickDelay());
-        }
+        robot.delay(clickDelay);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-        if (prop.getMouseMoveDelay() > 0) {
-            robot.delay(prop.getMouseMoveDelay());
-        }
+        robot.delay(moveDelay);
         robot.mouseMove(windowPos.x + p2.x, windowPos.y + p2.y);
 
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        if (prop.getMouseClickDelay() > 0) {
-            robot.delay(prop.getMouseClickDelay());
-        }
+        robot.delay(clickDelay);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         robot.mouseMove((int) mouse.getX(), (int) mouse.getY());
@@ -553,6 +566,8 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
 
     /** 初始化连线棋盘，并回调控制层创建对应局面。 */
     private boolean initChessBoard() {
+        pendingAutoMove = false;
+        pendingAutoMoveUntil = 0L;
         if (!findChessBoard(board2)) {
             return false;
         }
@@ -585,6 +600,13 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
             mouseClickByFront(windowPos, p1, p2);
         }
     }
+
+    private void markPendingAutoMove() {
+        pendingAutoMove = true;
+        // 给目标平台动画/网络延迟留缓冲，超时后允许重试。
+        long wait = Math.max(1500L, prop.getLinkScanTime() * 8L);
+        pendingAutoMoveUntil = System.currentTimeMillis() + wait;
+    }
     private Point getPosition(int x, int y) {
         double pieceWith = boardPos.width / (8 + OnnxModel.PADDING * 2);
         double pieceHeight = boardPos.height / (9 + OnnxModel.PADDING * 2);
@@ -606,6 +628,8 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
     /** 停止连线扫描线程。 */
     @Override
     public void stop() {
+        pendingAutoMove = false;
+        pendingAutoMoveUntil = 0L;
         if (thread != null && thread.isAlive()) {
             thread.interrupt();
         }

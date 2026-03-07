@@ -42,6 +42,24 @@ public class TimeSettingController {
     @FXML
     private TextField bookDelayEnd;
 
+    @FXML
+    private TextField autoOpeningMinTime;
+
+    @FXML
+    private TextField autoOpeningMaxTime;
+
+    @FXML
+    private TextField autoMiddleMinTime;
+
+    @FXML
+    private TextField autoMiddleMaxTime;
+
+    @FXML
+    private TextField autoEndMinTime;
+
+    @FXML
+    private TextField autoEndMaxTime;
+
 
     private Properties prop;
 
@@ -96,6 +114,91 @@ public class TimeSettingController {
         }
         prop.setBookDelayEnd(Integer.parseInt(txt));
 
+        txt = autoOpeningMinTime.getText();
+        if (!StringUtils.isPositiveInt(txt)) {
+            DialogUtils.showErrorDialog("失败", "开局最小时间错误");
+            return;
+        }
+        int openingMin = Integer.parseInt(txt);
+        if (openingMin < 1 || openingMin > 90) {
+            DialogUtils.showErrorDialog("失败", "开局最小时间应在1-90秒");
+            return;
+        }
+
+        txt = autoOpeningMaxTime.getText();
+        if (!StringUtils.isPositiveInt(txt)) {
+            DialogUtils.showErrorDialog("失败", "开局最大时间错误");
+            return;
+        }
+        int openingMax = Integer.parseInt(txt);
+        if (openingMax < 1 || openingMax > 90) {
+            DialogUtils.showErrorDialog("失败", "开局最大时间应在1-90秒");
+            return;
+        }
+        if (openingMax < openingMin) {
+            DialogUtils.showErrorDialog("失败", "开局最大时间不能小于最小时间");
+            return;
+        }
+
+        txt = autoMiddleMinTime.getText();
+        if (!StringUtils.isPositiveInt(txt)) {
+            DialogUtils.showErrorDialog("失败", "总局最小时间错误");
+            return;
+        }
+        int middleMin = Integer.parseInt(txt);
+        if (middleMin < 1 || middleMin > 90) {
+            DialogUtils.showErrorDialog("失败", "总局最小时间应在1-90秒");
+            return;
+        }
+
+        txt = autoMiddleMaxTime.getText();
+        if (!StringUtils.isPositiveInt(txt)) {
+            DialogUtils.showErrorDialog("失败", "总局最大时间错误");
+            return;
+        }
+        int middleMax = Integer.parseInt(txt);
+        if (middleMax < 1 || middleMax > 90) {
+            DialogUtils.showErrorDialog("失败", "总局最大时间应在1-90秒");
+            return;
+        }
+        if (middleMax < middleMin) {
+            DialogUtils.showErrorDialog("失败", "总局最大时间不能小于最小时间");
+            return;
+        }
+
+        txt = autoEndMinTime.getText();
+        if (!StringUtils.isPositiveInt(txt)) {
+            DialogUtils.showErrorDialog("失败", "残局最小时间错误");
+            return;
+        }
+        int endMin = Integer.parseInt(txt);
+        if (endMin < 1 || endMin > 90) {
+            DialogUtils.showErrorDialog("失败", "残局最小时间应在1-90秒");
+            return;
+        }
+
+        txt = autoEndMaxTime.getText();
+        if (!StringUtils.isPositiveInt(txt)) {
+            DialogUtils.showErrorDialog("失败", "残局最大时间错误");
+            return;
+        }
+        int endMax = Integer.parseInt(txt);
+        if (endMax < 1 || endMax > 90) {
+            DialogUtils.showErrorDialog("失败", "残局最大时间应在1-90秒");
+            return;
+        }
+        if (endMax < endMin) {
+            DialogUtils.showErrorDialog("失败", "残局最大时间不能小于最小时间");
+            return;
+        }
+
+        prop.setAutoBattleOpeningMinTime(openingMin);
+        prop.setAutoBattleOpeningMaxTime(openingMax);
+        prop.setAutoBattleMiddleMinTime(middleMin);
+        prop.setAutoBattleMiddleMaxTime(middleMax);
+        prop.setAutoBattleEndMinTime(endMin);
+        prop.setAutoBattleEndMaxTime(endMax);
+
         App.closeTimeSetting();
     }
 
@@ -120,6 +223,13 @@ public class TimeSettingController {
 
         bookDelayStart.setText(String.valueOf(prop.getBookDelayStart()));
         bookDelayEnd.setText(String.valueOf(prop.getBookDelayEnd()));
+
+        autoOpeningMinTime.setText(String.valueOf(prop.getAutoBattleOpeningMinTime()));
+        autoOpeningMaxTime.setText(String.valueOf(prop.getAutoBattleOpeningMaxTime()));
+        autoMiddleMinTime.setText(String.valueOf(prop.getAutoBattleMiddleMinTime()));
+        autoMiddleMaxTime.setText(String.valueOf(prop.getAutoBattleMiddleMaxTime()));
+        autoEndMinTime.setText(String.valueOf(prop.getAutoBattleEndMinTime()));
+        autoEndMaxTime.setText(String.valueOf(prop.getAutoBattleEndMaxTime()));
 
     }
 

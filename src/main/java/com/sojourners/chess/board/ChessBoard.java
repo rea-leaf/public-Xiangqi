@@ -5,7 +5,14 @@ import com.sojourners.chess.media.SoundPlayer;
 import com.sojourners.chess.util.PathUtils;
 import com.sojourners.chess.util.StringUtils;
 import com.sojourners.chess.util.XiangqiUtils;
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.canvas.Canvas;
+import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,6 +70,12 @@ public class ChessBoard {
     private List<MoveTip> moveTips = new ArrayList<>();
 
     private boolean isReverse;
+
+    private Timeline moveAnimationTimeline;
+
+    private static final int MOVE_ANIMATION_DURATION = 180;
+
+    private String lastMoveCommentary;
 
     public static class Point {
         int x;
@@ -386,8 +399,13 @@ public class ChessBoard {
 
     public String move(int x1, int y1, int x2, int y2) {
         // 先试走，再校验“是否送将”；非法则回滚。
+        String moveCode = stepForEngine(x1, y1, x2, y2);
+        StringBuilder sb = new StringBuilder();
+        XiangqiUtils.translate(this.board, sb, moveCode, false);
+
         char tmp = board[y2][x2];
-        boolean isRed = XiangqiUtils.isRed(board[y1][x1]);
+        char movingPiece = board[y1][x1];
+        boolean isRed = XiangqiUtils.isRed(movingPiece);
         board[y2][x2] = board[y1][x1];
         board[y1][x1] = ' ';
         if (XiangqiUtils.isJiang(board, isRed)) {
@@ -397,14 +415,17 @@ public class ChessBoard {
             }
             board[y1][x1] = board[y2][x2];
             board[y2][x2] = tmp;
+            lastMoveCommentary = null;
             return null;
         }
+        boolean checkMate = XiangqiUtils.isSha(board, !isRed);
+        boolean check = XiangqiUtils.isJiang(board, !isRed);
         if (stepSound) {
             // 根据局面结果选择不同音效：绝杀/将军/吃子/平移。
-            if (XiangqiUtils.isSha(board, !isRed)) {
+            if (checkMate) {
                 // 绝杀
                 sound.over();
-            } else if (XiangqiUtils.isJiang(board, !isRed)) {
+            } else if (check) {
                 // 将军
                 sound.check();
             } else {
@@ -417,12 +438,44 @@ public class ChessBoard {
             }
         }
 
+        lastMoveCommentary = buildMoveCommentary(sb.toString(), moveCode);
+
         prevStep = new Step(new Point(x1, y1), new Point(x2, y2));
         moveTips.clear();
         remark = null;
         manualList.clear();
-        paint();
-        return stepForEngine(x1, y1, x2, y2);
+        playMoveAnimation(movingPiece, x1, y1, x2, y2);
+        return moveCode;
+    }
+
+    private void playMoveAnimation(char movingPiece, int x1, int y1, int x2, int y2) {
+        if (!Platform.isFxApplicationThread()) {
+            paint();
+            return;
+        }
+        if (moveAnimationTimeline != null) {
+            moveAnimationTimeline.stop();
+        }
+
+        SimpleDoubleProperty progress = new SimpleDoubleProperty(0);
+        progress.addListener((observable, oldValue, newValue) ->
+                boardRender.paintAnimation(boardSize, this.board, prevStep, remark, stepTip,
+                        showMultiPV, moveTips, isReverse, showNumber, manualTip, manualList,
+                        movingPiece, x1, y1, x2, y2, newValue.doubleValue()));
+
+        moveAnimationTimeline = new Timeline(
+                new KeyFrame(Duration.ZERO, new KeyValue(progress, 0d)),
+                new KeyFrame(Duration.millis(MOVE_ANIMATION_DURATION), new KeyValue(progress, 1d, Interpolator.EASE_BOTH))
+        );
+        moveAnimationTimeline.setOnFinished(event -> paint());
+        moveAnimationTimeline.play();
+    }
+
+    private String buildMoveCommentary(String notation, String moveCode) {
+        if (StringUtils.isNotEmpty(notation)) {
+            return notation;
+        }
+        return moveCode;
     }
 
     public List<String> getTacticList(boolean redGo) {
@@ -542,6 +595,10 @@ public class ChessBoard {
 
     public char[][] getBoard() {
         return this.board;
+    }
+
+    public String getLastMoveCommentary() {
+        return lastMoveCommentary;
     }
 
     public void autoFitSize(double width, double height, double position) {

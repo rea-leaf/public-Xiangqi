@@ -84,6 +84,67 @@ public abstract class BaseBoardRender implements BoardRender {
         }
     }
 
+    public void paintAnimation(ChessBoard.BoardSize boardSize, char[][] board, ChessBoard.Step prevStep, ChessBoard.Point remark,
+                               boolean stepTip, boolean showMultiPV, List<ChessBoard.MoveTip> moveTips, boolean isReverse, boolean showNumber,
+                               boolean manualTip, List<ChessBoard.Step> manualList,
+                               char movingPiece, int x1, int y1, int x2, int y2, double progress) {
+        int padding = getPadding(boardSize);
+        int piece = getPieceSize(boardSize);
+        int pos = padding + piece / 2;
+
+        canvas.setWidth(2 * padding + piece * 9);
+        canvas.setHeight(2 * padding + piece * 10);
+
+        drawBackgroundImage(canvas.getWidth(), canvas.getHeight());
+        drawBoardLine(pos, padding, piece, isReverse, boardSize);
+        if (showNumber) {
+            drawBoardNum(pos, piece, isReverse, boardSize);
+        }
+        drawCenterText(pos, piece, boardSize);
+        if (prevStep != null) {
+            drawStepRemark(pos, piece, prevStep.getStart().x, prevStep.getStart().y, true, isReverse, boardSize);
+            drawStepRemark(pos, piece, prevStep.getEnd().x, prevStep.getEnd().y, true, isReverse, boardSize);
+        }
+        if (remark != null) {
+            drawStepRemark(pos, piece, remark.x, remark.y, false, isReverse, boardSize);
+        }
+
+        char[][] frameBoard = new char[10][9];
+        for (int i = 0; i < board.length; i++) {
+            System.arraycopy(board[i], 0, frameBoard[i], 0, board[i].length);
+        }
+        frameBoard[y2][x2] = ' ';
+        drawPieces(pos, piece, frameBoard, isReverse, boardSize);
+
+        if (manualTip && manualList != null && manualList.size() > 1) {
+            for (int i = manualList.size() - 1; i >= 0; i--) {
+                ChessBoard.Step manual = manualList.get(i);
+                drawStepTips(pos, piece, manual.getStart().x, manual.getStart().y, manual.getEnd().x, manual.getEnd().y, true, i + 1, isReverse, Color.web("#FF2F00"));
+            }
+        }
+        if (stepTip && moveTips != null) {
+            for (int i = moveTips.size() - 1; i >= 0; i--) {
+                ChessBoard.MoveTip tip = moveTips.get(i);
+                ChessBoard.Step second = tip.getSecond();
+                if (second != null) {
+                    drawStepTips(pos, piece, second.getStart().x, second.getStart().y, second.getEnd().x, second.getEnd().y, showMultiPV, i + 1, isReverse, Color.GREEN);
+                }
+                ChessBoard.Step first = tip.getFirst();
+                if (first != null) {
+                    drawStepTips(pos, piece, first.getStart().x, first.getStart().y, first.getEnd().x, first.getEnd().y, showMultiPV, i + 1, isReverse, Color.PURPLE);
+                }
+            }
+        }
+
+        int startX = pos + piece * getReverseX(x1, isReverse);
+        int startY = pos + piece * getReverseY(y1, isReverse);
+        int endX = pos + piece * getReverseX(x2, isReverse);
+        int endY = pos + piece * getReverseY(y2, isReverse);
+        double centerX = startX + (endX - startX) * progress;
+        double centerY = startY + (endY - startY) * progress;
+        drawPieceAtCenter((int) Math.round(centerX), (int) Math.round(centerY), piece, movingPiece, boardSize);
+    }
+
     // paint edit chess board demo piece
     public void paintDemoBoard(ChessBoard.BoardSize boardSize, char[][] board, ChessBoard.Point remark) {
         int piece = getPieceSize(boardSize);
@@ -362,4 +423,6 @@ public abstract class BaseBoardRender implements BoardRender {
     public void setAutoPieceSize(int size) {
         this.autoPieceSize = size;
     }
+
+    protected abstract void drawPieceAtCenter(int centerX, int centerY, int piece, char chess, ChessBoard.BoardSize style);
 }

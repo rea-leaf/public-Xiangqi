@@ -41,31 +41,43 @@ public class DefaultBoardRender extends BaseBoardRender {
             font = Font.loadFont(getClass().getResourceAsStream("/font/chessman.ttf"), fontSize);
         }
         // 绘制棋子
-        int r = (piece - piece / 10) / 2;
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
-                String word = XiangqiUtils.map.get(board[i][j]);
-                if (word != null) {
+                if (XiangqiUtils.map.get(board[i][j]) != null) {
                     int x = pos + piece * getReverseX(j, isReverse);
                     int y = pos + piece * getReverseY(i, isReverse);
-
-                    double bW = getPieceBw(style);
-                    double sW = getPieceSw(style);
-
-                    Color color = Color.web(XiangqiUtils.isRed(board[i][j]) ? "#AD1A02" : "#167B7F");
-                    gc.setFill(Color.WHITE);
-                    gc.fillOval(x - r, y - r, 2 * r, 2 * r);
-                    gc.setStroke(color);
-                    gc.setLineWidth(bW);
-                    gc.strokeOval(x - r, y - r, 2 * r, 2 * r);
-                    gc.setLineWidth(sW);
-                    gc.strokeOval(x - r + bW * 1.8, y - r + bW * 1.8, 2 * (r - bW * 1.8), 2 * (r - bW * 1.8));
-                    gc.setFill(color);
-                    gc.setFont(font);
-                    gc.fillText(word, x - fontSize / 2, y + fontSize / 2 - fontSize / 5.5);
+                    drawPieceAtCenter(x, y, piece, board[i][j], style);
                 }
             }
         }
+    }
+
+    @Override
+    protected void drawPieceAtCenter(int centerX, int centerY, int piece, char chess, ChessBoard.BoardSize style) {
+        String word = XiangqiUtils.map.get(chess);
+        if (word == null) {
+            return;
+        }
+        if (font == null || fontSize != getFontSize(style)) {
+            fontSize = getFontSize(style);
+            font = Font.loadFont(getClass().getResourceAsStream("/font/chessman.ttf"), fontSize);
+        }
+
+        int r = (piece - piece / 10) / 2;
+        double bW = getPieceBw(style);
+        double sW = getPieceSw(style);
+
+        Color color = Color.web(XiangqiUtils.isRed(chess) ? "#AD1A02" : "#167B7F");
+        gc.setFill(Color.WHITE);
+        gc.fillOval(centerX - r, centerY - r, 2 * r, 2 * r);
+        gc.setStroke(color);
+        gc.setLineWidth(bW);
+        gc.strokeOval(centerX - r, centerY - r, 2 * r, 2 * r);
+        gc.setLineWidth(sW);
+        gc.strokeOval(centerX - r + bW * 1.8, centerY - r + bW * 1.8, 2 * (r - bW * 1.8), 2 * (r - bW * 1.8));
+        gc.setFill(color);
+        gc.setFont(font);
+        gc.fillText(word, centerX - fontSize / 2, centerY + fontSize / 2 - fontSize / 5.5);
     }
 
     /**

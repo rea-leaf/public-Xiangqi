@@ -64,17 +64,26 @@ public class CustomBoardRender extends BaseBoardRender {
     @Override
     public void drawPieces(int pos, int piece, char[][] board, boolean isReverse, ChessBoard.BoardSize style) {
         // 绘制棋子
-        int r = (piece - piece / 16) / 2;
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
                 Image img = map.get(board[i][j]);
                 if (img != null) {
                     int x = pos + piece * getReverseX(j, isReverse);
                     int y = pos + piece * getReverseY(i, isReverse);
-                    gc.drawImage(img, x - r, y - r, 2 * r, 2 * r);
+                    drawPieceAtCenter(x, y, piece, board[i][j], style);
                 }
             }
         }
+    }
+
+    @Override
+    protected void drawPieceAtCenter(int centerX, int centerY, int piece, char chess, ChessBoard.BoardSize style) {
+        Image img = map.get(chess);
+        if (img == null) {
+            return;
+        }
+        int r = (piece - piece / 16) / 2;
+        gc.drawImage(img, centerX - r, centerY - r, 2 * r, 2 * r);
     }
 
     @Override
