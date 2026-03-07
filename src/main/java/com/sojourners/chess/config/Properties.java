@@ -4,6 +4,7 @@ import com.sojourners.chess.board.ChessBoard;
 import com.sojourners.chess.enginee.Engine;
 import com.sojourners.chess.model.EngineConfig;
 import com.sojourners.chess.openbook.MoveRule;
+import com.sojourners.chess.util.BuiltinEngineLoader;
 import com.sojourners.chess.util.PathUtils;
 
 
@@ -23,7 +24,7 @@ public class Properties implements Serializable {
     private static Properties prop;
 
     private ChessBoard.BoardSize boardSize;
-    private ChessBoard.BoardStyle boardStyle = ChessBoard.BoardStyle.DEFAULT;
+    private ChessBoard.BoardStyle boardStyle = ChessBoard.BoardStyle.CUSTOM;
 
     private boolean stepTip;
 
@@ -157,7 +158,7 @@ public class Properties implements Serializable {
                     List<EngineConfig> engineConfigList = new ArrayList<>();
                     prop = new Properties(ChessBoard.BoardSize.AUTOFIT_BOARD, true,
                             1, 16, "",
-                            Engine.AnalysisModel.FIXED_TIME, 5000, true,
+                            Engine.AnalysisModel.FIXED_TIME, 5000, false,
                             920, 737, 0.64, 0.6,
                             100, 2, true, true, false,
                             true, true, false, 2000, 9999,
@@ -167,6 +168,7 @@ public class Properties implements Serializable {
                 }
             }
             normalizeAutoBattleTime(prop);
+            BuiltinEngineLoader.autoLoad(prop);
         }
         return prop;
     }

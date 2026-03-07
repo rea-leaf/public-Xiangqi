@@ -53,7 +53,9 @@ import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -213,6 +215,8 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
      * 变招列表
      */
     private List<String> tacticList;
+
+    private final Map<String, String> engineDescMap = new LinkedHashMap<>();
 
     @FXML
     public void newButtonClick(ActionEvent event) {
@@ -1204,10 +1208,51 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     private void refreshEngineComboBox() {
         engineComboBox.getItems().clear();
+        engineDescMap.clear();
         for (EngineConfig ec : prop.getEngineConfigList()) {
             engineComboBox.getItems().add(ec.getName());
+            engineDescMap.put(ec.getName(), buildEngineDescription(ec));
         }
         engineComboBox.setValue(prop.getEngineName());
+        updateEngineDescView(prop.getEngineName());
+    }
+
+    private String buildEngineDescription(EngineConfig ec) {
+        StringBuilder sb = new StringBuilder();
+        String name = ec.getName() == null ? "" : ec.getName();
+        if (name.contains("内置-")) {
+            sb.append("内置引擎");
+            if (name.contains("推荐")) {
+                sb.append("（当前机器推荐）");
+            }
+            if (name.contains("AVX512")) {
+                sb.append("，指令集：AVX512，高性能");
+            } else if (name.contains("AVX2")) {
+                sb.append("，指令集：AVX2，性能较高");
+            } else if (name.contains("BMI2")) {
+                sb.append("，指令集：BMI2");
+            } else if (name.contains("通用")) {
+                sb.append("，通用版本，兼容性最好");
+            }
+        } else {
+            sb.append("外部引擎");
+        }
+        sb.append("，协议：").append(ec.getProtocol() == null ? "未知" : ec.getProtocol().toUpperCase());
+        if (ec.getPath() != null) {
+            sb.append("，路径：").append(ec.getPath());
+        }
+        return sb.toString();
+    }
+
+    private void updateEngineDescView(String name) {
+        String desc = engineDescMap.get(name);
+        if (StringUtils.isEmpty(desc)) {
+            desc = "点击引擎下拉框可查看引擎说明";
+        }
+        if (prop.isLinkShowInfo()) {
+            infoShowLabel.setText(desc);
+        }
+        engineComboBox.setTooltip(new Tooltip(desc));
     }
 
     private void initButtonListener() {
@@ -1239,6 +1284,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         engineComboBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
+                updateEngineDescView(t1);
                 if (StringUtils.isNotEmpty(t1) && !t1.equals(prop.getEngineName())) {
                     // 保存引擎设置
                     prop.setEngineName(t1);
@@ -1255,6 +1301,14 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
                     }
                     // 加载新引擎
                     loadEngine(t1);
+                }
+            }
+        });
+        engineComboBox.setOnMouseClicked(event -> {
+            if (event.getClickCount() >= 2) {
+                String name = engineComboBox.getSelectionModel().getSelectedItem();
+                if (StringUtils.isNotEmpty(name)) {
+                    DialogUtils.showInfoDialog("引擎说明", engineDescMap.getOrDefault(name, "暂无说明"));
                 }
             }
         });
