@@ -57,6 +57,8 @@ public class Properties implements Serializable {
     private int linkThreadNum;
     private boolean linkAnimation;
     private boolean linkShowInfo;
+
+    private boolean showEngineLog = false;
     private boolean linkBackMode;
 
     private List<String> openBookList;
@@ -98,6 +100,8 @@ public class Properties implements Serializable {
     private String chessManualPath;
 
     private boolean manualTip = true;
+
+    private boolean colloquialReviewStyle = true;
 
     private Properties(ChessBoard.BoardSize boardSize, boolean stepTip,
                        int threadNum, int hashSize, String engineName, Engine.AnalysisModel analysisModel, long analysisValue,
@@ -439,6 +443,14 @@ public class Properties implements Serializable {
         this.linkShowInfo = linkShowInfo;
     }
 
+    public boolean isShowEngineLog() {
+        return showEngineLog;
+    }
+
+    public void setShowEngineLog(boolean showEngineLog) {
+        this.showEngineLog = showEngineLog;
+    }
+
     public boolean isLinkBackMode() {
         return linkBackMode;
     }
@@ -589,5 +601,13 @@ public class Properties implements Serializable {
 
     public void setManualTip(boolean manualTip) {
         this.manualTip = manualTip;
+    }
+
+    public boolean isColloquialReviewStyle() {
+        return colloquialReviewStyle;
+    }
+
+    public void setColloquialReviewStyle(boolean colloquialReviewStyle) {
+        this.colloquialReviewStyle = colloquialReviewStyle;
     }
 }

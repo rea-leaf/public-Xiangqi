@@ -1,6 +1,7 @@
 package com.sojourners.chess.model;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.io.Serializable;
 
@@ -21,6 +22,8 @@ public class ManualRecord implements Serializable {
     private String cnMove;
 
     private String remark;
+
+    private LinkedHashMap<String, String> expectedReplies;
 
     private int next;
 
@@ -75,6 +78,14 @@ public class ManualRecord implements Serializable {
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    public LinkedHashMap<String, String> getExpectedReplies() {
+        return expectedReplies;
+    }
+
+    public void setExpectedReplies(LinkedHashMap<String, String> expectedReplies) {
+        this.expectedReplies = expectedReplies;
     }
 
     public int getNext() {

@@ -229,10 +229,20 @@ public class ChessManualHandle {
     }
 
     public List<String> boardMove(String move, String cnMove) {
+        return boardMove(move, cnMove, null, null);
+    }
+
+    public List<String> boardMove(String move, String cnMove, String autoRemark) {
+        return boardMove(move, cnMove, autoRemark, null);
+    }
+
+    public List<String> boardMove(String move, String cnMove, String autoRemark, LinkedHashMap<String, String> expectedReplies) {
         if (manualPlayTimeline != null)
             manualPlayTimeline.stop();
 
         ManualRecord currentRecord = recordTable.getItems().get(p);
+        markPredictionHit(currentRecord, cnMove);
+
         ManualRecord next = null;
         for (ManualRecord mr : currentRecord.getList()) {
             if (mr.getMove().equals(move)) {
@@ -242,6 +252,12 @@ public class ChessManualHandle {
         }
         if (next == null) {
             next = new ManualRecord(p + 1, move, cnMove);
+            if (StringUtils.isNotEmpty(autoRemark)) {
+                next.setRemark(autoRemark);
+            }
+            if (expectedReplies != null && !expectedReplies.isEmpty()) {
+                next.setExpectedReplies(new LinkedHashMap<>(expectedReplies));
+            }
             currentRecord.getList().add(next);
             currentRecord.setNext(currentRecord.getList().size() - 1);
             refreshRecordView(currentRecord, null);
@@ -265,6 +281,36 @@ public class ChessManualHandle {
         reLocationTable();
 
         return recordTable.getItems().get(p).getList().stream().map(ManualRecord::getMove).toList();
+    }
+
+    private void markPredictionHit(ManualRecord currentRecord, String actualCnMove) {
+        if (currentRecord == null || StringUtils.isEmpty(actualCnMove)) {
+            return;
+        }
+        LinkedHashMap<String, String> replies = currentRecord.getExpectedReplies();
+        if (replies == null || replies.isEmpty()) {
+            return;
+        }
+
+        String tip = replies.get(actualCnMove);
+        String remark = currentRecord.getRemark();
+        if (tip != null) {
+            String mark = "实战选择：对手走了" + actualCnMove + "。";
+            if (remark == null || !remark.contains(mark)) {
+                String append = mark + "应对策略：" + tip;
+                currentRecord.setRemark(StringUtils.isEmpty(remark) ? append : remark + System.lineSeparator() + append);
+            }
+        } else {
+            String mark = "实战选择：对手走了" + actualCnMove + "（未在主要预案内）。";
+            if (remark == null || !remark.contains(mark)) {
+                currentRecord.setRemark(StringUtils.isEmpty(remark) ? mark : remark + System.lineSeparator() + mark);
+            }
+        }
+
+        if (recordTable.getSelectionModel().getSelectedIndex() == p) {
+            remarkText.setText(currentRecord.getRemark());
+            recordTable.refresh();
+        }
     }
 
     private void setRemarkAndNext(ManualRecord mr) {

@@ -15,9 +15,14 @@ import javafx.scene.canvas.Canvas;
 import javafx.util.Duration;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 棋盘领域模型 + 渲染入口。
@@ -76,6 +81,15 @@ public class ChessBoard {
     private static final int MOVE_ANIMATION_DURATION = 180;
 
     private String lastMoveCommentary;
+
+    private String lastMoveAnnotation;
+
+    private LinkedHashMap<String, String> lastMoveOpponentPlans = new LinkedHashMap<>();
+
+    private boolean colloquialReviewStyle = true;
+
+    private int lastReviewTheme = -1;
+    private int reviewThemeStreak = 0;
 
     public static class Point {
         int x;
@@ -416,6 +430,8 @@ public class ChessBoard {
             board[y1][x1] = board[y2][x2];
             board[y2][x2] = tmp;
             lastMoveCommentary = null;
+            lastMoveAnnotation = null;
+            lastMoveOpponentPlans.clear();
             return null;
         }
         boolean checkMate = XiangqiUtils.isSha(board, !isRed);
@@ -439,6 +455,7 @@ public class ChessBoard {
         }
 
         lastMoveCommentary = buildMoveCommentary(sb.toString(), moveCode);
+        lastMoveAnnotation = buildMoveAnnotation(movingPiece, tmp, check, checkMate, x1, y1, x2, y2, lastMoveCommentary);
 
         prevStep = new Step(new Point(x1, y1), new Point(x2, y2));
         moveTips.clear();
@@ -476,6 +493,311 @@ public class ChessBoard {
             return notation;
         }
         return moveCode;
+    }
+
+    private String buildMoveAnnotation(char movingPiece, char captured, boolean check, boolean checkMate,
+                                       int x1, int y1, int x2, int y2, String notation) {
+        final int THEME_FINISH = 1;
+        final int THEME_FORCING = 2;
+        final int THEME_TRADE = 3;
+        final int THEME_MAJOR = 4;
+        final int THEME_KNIGHT = 5;
+        final int THEME_PAWN = 6;
+        final int THEME_DEFENSE = 7;
+        final int THEME_TUNE = 8;
+        final int THEME_TEMPO = 9;
+
+        String prefix = StringUtils.isNotEmpty(notation) ? notation : stepForEngine(x1, y1, x2, y2).toUpperCase();
+        String pieceName = pieceTeachName(movingPiece);
+        String pieceRef = pieceInstanceName(movingPiece, x1, y1);
+        boolean myRed = XiangqiUtils.isRed(movingPiece);
+        boolean forward = y2 < y1;
+        int delta = Math.abs(y2 - y1) + Math.abs(x2 - x1);
+        boolean center = x2 == 4;
+        int seed = x1 * 97 + y1 * 89 + x2 * 83 + y2 * 79 + (captured == ' ' ? 0 : 37);
+
+        String purpose;
+        String risk;
+        String follow;
+
+        if (checkMate) {
+            purpose = "通过" + pieceRef + "形成连续威胁并完成杀棋，直接结束对局";
+            risk = "如果不这样走，可能会给对手留下逃将或反击的最后机会";
+            follow = "同类局面优先找“先手将军+封锁退路”的组合，而不是只看单步得子";
+            return withOpponentPlans(formatTeaching(prefix, THEME_FINISH, purpose, risk, follow, seed), myRed);
+        }
+        if (check) {
+            purpose = "先将军抢节奏，迫使对手先解将，主动权回到自己手里";
+            risk = "如果不将军，节奏可能被对手抢走，自己的进攻点会被先手化解";
+            follow = "下一步优先衔接补将位、牵制大子或简化转换，持续保持先手压力";
+            return withOpponentPlans(formatTeaching(prefix, THEME_FORCING, purpose, risk, follow, seed), myRed);
+        }
+        if (captured != ' ') {
+            purpose = "先用" + pieceRef + "吃子扩大子力优势，同时削弱对方关键防守点";
+            risk = "如果不吃，等于把现成收益让给对手，后面可能要付出更大代价才能再拿回来";
+            follow = "吃完后先做安全检查：是否漏将、是否被反先；确认安全再考虑继续扩大战果";
+            return withOpponentPlans(formatTeaching(prefix, THEME_TRADE, purpose, risk, follow, seed), myRed);
+        }
+
+        char p = Character.toLowerCase(movingPiece);
+        if (p == 'r' || p == 'c') {
+            purpose = center
+                    ? "让" + pieceRef + "抢占中路，提高对两翼与纵线的同时控制"
+                    : "调整" + pieceRef + "线路，先把攻防通道打通";
+            risk = "如果不先调整大子，后续常见问题是想进攻却没有通路，反而容易被对手先手反击";
+            follow = center
+                    ? "下一步可考虑借中路做牵制或串打，优先攻击对方薄弱点"
+                    : "线路打通后再选择是压制中路还是转翼侧，不急于一手见胜负";
+            return withOpponentPlans(formatTeaching(prefix, THEME_MAJOR, purpose, risk, follow, seed), myRed);
+        }
+        if (p == 'n') {
+            purpose = "先活" + pieceRef + "，把这匹马从原位调到更活跃线路，提升机动性并增加未来两三步的攻击点";
+            risk = "如果不先活这匹马，这一路子力会继续拥堵，常见后果是进攻少一枚参与子，防守也来不及回补";
+            follow = "下一步重点看这匹马能否和车炮形成联动，优先争取“马炮牵制”或“马车压线”的连续手";
+            return withOpponentPlans(formatTeaching(prefix, THEME_KNIGHT, purpose, risk, follow, seed), myRed);
+        }
+        if (p == 'p') {
+            purpose = "通过" + pieceRef + "前进争取空间，逐步压缩对手活动范围";
+            risk = "如果不推进，阵型可能长期被动，给对手留下从容整子的时间";
+            follow = "兵卒过河后价值更高，后续要确认后方有车炮接应，避免孤兵深入";
+            return withOpponentPlans(formatTeaching(prefix, THEME_PAWN, purpose, risk, follow, seed), myRed);
+        }
+        if (p == 'a' || p == 'b' || p == 'k') {
+            purpose = "先用" + pieceRef + "稳住将位与防守结构，降低被突袭和连续将军的风险";
+            risk = "如果忽略防守，后续容易被对手借先手连续压制，局面会快速恶化";
+            follow = "防守到位后再考虑反击，优先寻找能兼顾安全与反先的转换点";
+            return withOpponentPlans(formatTeaching(prefix, THEME_DEFENSE, purpose, risk, follow, seed), myRed);
+        }
+        if (delta <= 1) {
+            purpose = "做小幅调整，优化子力协同和关键点控制";
+            risk = "如果不做这类整理手，后续战术常因子力站位不佳而打不出来";
+            follow = "整理完成后再考虑提速进攻，效率会更高且风险更可控";
+            return withOpponentPlans(formatTeaching(prefix, THEME_TUNE, purpose, risk, follow, seed), myRed);
+        }
+        purpose = "通过" + (forward ? "前压" : "横向/后向") + "调整节奏，先完善子力位置";
+        risk = "如果急于硬攻，常见问题是进攻点单薄，容易被对手反先化解";
+        follow = "下一步优先观察是否出现将军、牵制或得子的转换机会，再决定是否提速";
+        return withOpponentPlans(formatTeaching(prefix, THEME_TEMPO, purpose, risk, follow, seed), myRed);
+    }
+
+    private String withOpponentPlans(String text, boolean myRed) {
+        List<OpponentPlan> plans = analyzeOpponentPlans(!myRed);
+        lastMoveOpponentPlans = new LinkedHashMap<>();
+        if (plans.isEmpty()) {
+            return text + "；对手威胁较少，先稳住阵型。";
+        }
+        StringBuilder sb = new StringBuilder(text);
+        sb.append("；对手常见：");
+        for (int i = 0; i < plans.size(); i++) {
+            OpponentPlan p = plans.get(i);
+            lastMoveOpponentPlans.put(p.cnMove, p.response);
+            if (i > 0) {
+                sb.append("；");
+            }
+            sb.append(i + 1).append("）").append(p.cnMove).append(" -> ").append(p.response);
+        }
+        sb.append("。");
+        return sb.toString();
+    }
+
+    private List<OpponentPlan> analyzeOpponentPlans(boolean opponentRed) {
+        List<OpponentPlan> candidates = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (int y = 0; y < 10; y++) {
+            for (int x = 0; x < 9; x++) {
+                char piece = board[y][x];
+                if (piece == ' ' || XiangqiUtils.isRed(piece) != opponentRed) {
+                    continue;
+                }
+                for (int y2 = 0; y2 < 10; y2++) {
+                    for (int x2 = 0; x2 < 9; x2++) {
+                        if ((x == x2 && y == y2) || !XiangqiUtils.canGo(board, y, x, y2, x2)) {
+                            continue;
+                        }
+                        String move = stepForEngine(x, y, x2, y2);
+                        String cnMove = translatePreview(board, move);
+                        char captured = board[y2][x2];
+
+                        board[y2][x2] = board[y][x];
+                        board[y][x] = ' ';
+
+                        boolean illegal = XiangqiUtils.isJiang(board, opponentRed);
+                        boolean givesCheck = !illegal && XiangqiUtils.isJiang(board, !opponentRed);
+
+                        board[y][x] = board[y2][x2];
+                        board[y2][x2] = captured;
+
+                        if (illegal || seen.contains(cnMove)) {
+                            continue;
+                        }
+                        seen.add(cnMove);
+
+                        int score = 0;
+                        if (givesCheck) {
+                            score += 1200;
+                        }
+                        score += pieceValue(captured) * 10;
+                        if (x2 == 4) {
+                            score += 120;
+                        }
+                        char p = Character.toLowerCase(piece);
+                        if (p == 'r' || p == 'c' || p == 'n') {
+                            score += 40;
+                        }
+
+                        String response = suggestResponse(piece, captured, givesCheck, x2, opponentRed);
+                        candidates.add(new OpponentPlan(cnMove, response, score));
+                    }
+                }
+            }
+        }
+
+        Collections.sort(candidates, Comparator.comparingInt(OpponentPlan::score).reversed());
+        if (candidates.size() > 2) {
+            return new ArrayList<>(candidates.subList(0, 2));
+        }
+        return candidates;
+    }
+
+    private String suggestResponse(char movingPiece, char captured, boolean givesCheck, int targetX, boolean opponentRed) {
+        if (givesCheck) {
+            return "先解将，优先挡线或兑子。";
+        }
+        if (captured != ' ' && pieceValue(captured) >= 5) {
+            return "先算交换，能反吃就反吃。";
+        }
+        if (Character.toLowerCase(movingPiece) == 'p') {
+            return "先封兵线，别让兵卒持续前压。";
+        }
+        if ((Character.toLowerCase(movingPiece) == 'r' || Character.toLowerCase(movingPiece) == 'c') && targetX == 4) {
+            return "先控中路，必要时小子顶住。";
+        }
+        if (opponentRed) {
+            return "先稳将位，再找反先。";
+        }
+        return "先稳将位，再找反先。";
+    }
+
+    private int pieceValue(char c) {
+        char p = Character.toLowerCase(c);
+        if (p == 'k') return 100;
+        if (p == 'r') return 9;
+        if (p == 'c') return 5;
+        if (p == 'n') return 4;
+        if (p == 'b' || p == 'a') return 2;
+        if (p == 'p') return 1;
+        return 0;
+    }
+
+    private String translatePreview(char[][] srcBoard, String move) {
+        char[][] tmp = new char[10][9];
+        for (int i = 0; i < srcBoard.length; i++) {
+            System.arraycopy(srcBoard[i], 0, tmp[i], 0, srcBoard[i].length);
+        }
+        StringBuilder sb = new StringBuilder();
+        XiangqiUtils.translate(tmp, sb, move, false);
+        return sb.toString();
+    }
+
+    private static class OpponentPlan {
+        private final String cnMove;
+        private final String response;
+        private final int score;
+
+        private OpponentPlan(String cnMove, String response, int score) {
+            this.cnMove = cnMove;
+            this.response = response;
+            this.score = score;
+        }
+
+        private int score() {
+            return score;
+        }
+    }
+
+    private String formatTeaching(String prefix, int theme, String purpose, String risk, String follow, int seed) {
+        if (!colloquialReviewStyle) {
+            return prefix + "：目的=" + purpose + "；风险=" + risk + "；后续=" + follow + "。";
+        }
+        if (theme == lastReviewTheme) {
+            reviewThemeStreak++;
+        } else {
+            lastReviewTheme = theme;
+            reviewThemeStreak = 1;
+        }
+
+        String[] intros = new String[]{"目的", "核心", "先手点"};
+        String[] riskLeads = new String[]{"风险", "不走会", "代价"};
+        String[] followLeads = new String[]{"后续", "下一步", "衔接"};
+
+        int base = Math.abs(seed + reviewThemeStreak * 13);
+        String intro = intros[base % intros.length];
+        String riskLead = riskLeads[(base / 3) % riskLeads.length];
+        String followLead = followLeads[(base / 5) % followLeads.length];
+
+        return prefix + "：" + intro + "=" + purpose + "；" + riskLead + "=" + risk + "；" + followLead + "=" + follow + "。";
+    }
+
+    private String tagForTheme(int theme) {
+        if (theme == 1) return "终结转换";
+        if (theme == 2) return "先手压制";
+        if (theme == 3) return "子力交换";
+        if (theme == 4) return "大子调线";
+        if (theme == 5) return "活马提子";
+        if (theme == 6) return "空间推进";
+        if (theme == 7) return "稳固防守";
+        if (theme == 8) return "子力整理";
+        return "节奏转换";
+    }
+
+    private String pieceTeachName(char c) {
+        char p = Character.toLowerCase(c);
+        if (p == 'r') return "车";
+        if (p == 'n') return "马";
+        if (p == 'c') return "炮";
+        if (p == 'p') return "兵卒";
+        if (p == 'b') return "象";
+        if (p == 'a') return "士";
+        if (p == 'k') return "将帅";
+        return "棋子";
+    }
+
+    private String pieceInstanceName(char c, int x, int y) {
+        char p = Character.toLowerCase(c);
+        String base = pieceTeachName(c);
+        boolean red = XiangqiUtils.isRed(c);
+
+        if (p == 'n' || p == 'r' || p == 'c') {
+            String side = isLeftFromSelf(red, x) ? "左路" : "右路";
+            return side + base;
+        }
+        if (p == 'p') {
+            String line = fileNameForSide(red, x);
+            return line + (red ? "兵" : "卒");
+        }
+        if (p == 'a') {
+            return isLeftFromSelf(red, x) ? "左士" : "右士";
+        }
+        if (p == 'b') {
+            return isLeftFromSelf(red, x) ? "左象" : "右象";
+        }
+        if (p == 'k') {
+            return red ? "红方将位" : "黑方将位";
+        }
+        return base + "(" + (char) ('a' + x) + (9 - y) + ")";
+    }
+
+    private boolean isLeftFromSelf(boolean red, int x) {
+        return red ? x <= 4 : x >= 4;
+    }
+
+    private String fileNameForSide(boolean red, int x) {
+        String[] nums = {"九", "八", "七", "六", "五", "四", "三", "二", "一"};
+        int idx = red ? x : 8 - x;
+        if (idx < 0 || idx >= nums.length) {
+            return "边线";
+        }
+        return nums[idx] + "路";
     }
 
     public List<String> getTacticList(boolean redGo) {
@@ -559,6 +881,10 @@ public class ChessBoard {
         this.stepSound = f;
     }
 
+    public void setColloquialReviewStyle(boolean colloquialReviewStyle) {
+        this.colloquialReviewStyle = colloquialReviewStyle;
+    }
+
     /**
      * 翻译着法(记录棋谱)
      * @param move
@@ -599,6 +925,14 @@ public class ChessBoard {
 
     public String getLastMoveCommentary() {
         return lastMoveCommentary;
+    }
+
+    public String getLastMoveAnnotation() {
+        return lastMoveAnnotation;
+    }
+
+    public LinkedHashMap<String, String> getLastMoveOpponentPlans() {
+        return new LinkedHashMap<>(lastMoveOpponentPlans);
     }
 
     public void autoFitSize(double width, double height, double position) {

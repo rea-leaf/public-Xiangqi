@@ -93,10 +93,24 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     private SplitPane splitPane2;
 
     @FXML
+    private BorderPane listViewPane;
+
+    @FXML
     private ListView<ThinkData> listView;
+
+    private ListView<String> annotationListView;
 
     @FXML
     private ComboBox<String> engineComboBox;
+
+    @FXML
+    private ToolBar engineTopToolBar;
+
+    @FXML
+    private Label engineTopTitleLabel;
+
+    @FXML
+    private Label hashUnitLabel;
 
     @FXML
     private ComboBox<String> linkComboBox;
@@ -135,6 +149,12 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     private CheckMenuItem menuOfShowStatus;
     @FXML
     private CheckMenuItem menuOfShowNumber;
+    @FXML
+    private CheckMenuItem menuOfColloquialReview;
+    @FXML
+    private RadioMenuItem menuOfShowEngineLog;
+    @FXML
+    private RadioMenuItem menuOfShowAnnotation;
 
     @FXML
     private CheckMenuItem menuOfTopWindow;
@@ -298,6 +318,27 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         CheckMenuItem item = (CheckMenuItem) event.getTarget();
         prop.setStepSound(item.isSelected());
         board.setStepSound(prop.isStepSound());
+    }
+
+    @FXML
+    void showEngineLogModeClick(ActionEvent event) {
+        prop.setShowEngineLog(true);
+        applyEngineLogVisibility();
+    }
+
+    @FXML
+    void showAnnotationModeClick(ActionEvent event) {
+        prop.setShowEngineLog(false);
+        applyEngineLogVisibility();
+    }
+
+    @FXML
+    void colloquialReviewClick(ActionEvent event) {
+        CheckMenuItem item = (CheckMenuItem) event.getTarget();
+        prop.setColloquialReviewStyle(item.isSelected());
+        if (board != null) {
+            board.setColloquialReviewStyle(prop.isColloquialReviewStyle());
+        }
     }
 
     @FXML
@@ -682,7 +723,13 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         // 统一落子后的收敛入口：
         // 1. 更新棋谱 2. 更新曲线 3. 切换行棋方 4. 决定引擎还是库招继续接管
         // 记录棋谱
-        List<String> nextList = chessManualHandle.boardMove(move, board.translate(move, true));
+        List<String> nextList = chessManualHandle.boardMove(
+                move,
+                board.translate(move, true),
+                board.getLastMoveAnnotation(),
+                board.getLastMoveOpponentPlans());
+        showAnnotationOnTop(board.getLastMoveAnnotation(), redGo);
+        appendAnnotationToPanel(board.getLastMoveAnnotation(), chessManualHandle.getP(), redGo);
         board.setManualList(nextList);
         // 趋势图
         refreshLineChart();
@@ -908,6 +955,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
             }
 
         });
+        initAnnotationView();
         // 按钮
         setButtonTips();
         // 棋盘
@@ -1046,6 +1094,12 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         menuOfShowNumber.setSelected(prop.isShowNumber());
         // 显示状态栏
         menuOfShowStatus.setSelected(prop.isLinkShowInfo());
+        // 复盘注解口语风格
+        menuOfColloquialReview.setSelected(prop.isColloquialReviewStyle());
+        // 显示引擎日志
+        menuOfShowEngineLog.setSelected(prop.isShowEngineLog());
+        menuOfShowAnnotation.setSelected(!prop.isShowEngineLog());
+        applyEngineLogVisibility();
         // 棋盘大小
         if (prop.getBoardSize() == ChessBoard.BoardSize.LARGE_BOARD) {
             menuOfLargeBoard.setSelected(true);
@@ -1161,6 +1215,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         // 绘制棋盘
         board = new ChessBoard(this.canvas, prop.getBoardSize(), prop.getBoardStyle(), prop.isStepTip(), prop.isManualTip(),
                 engine != null && engine.getMultiPV() > 1, prop.isStepSound(), prop.isShowNumber(), fenCode);
+        board.setColloquialReviewStyle(prop.isColloquialReviewStyle());
         // 设置局面
         redGo = StringUtils.isEmpty(fenCode) ? true : fenCode.contains("w");
         fenCode = board.fenCode(redGo);
@@ -1539,6 +1594,13 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
             td.generate(redGo, isReverse.getValue(), board);
             if (td.getValid()) {
                 Platform.runLater(() -> {
+                    if (!prop.isShowEngineLog()) {
+                        board.setTip(td.getDetail().get(0), td.getDetail().size() > 1 ? td.getDetail().get(1) : null, td.getPv());
+                        if (td.getPv() == 1) {
+                            chessManualHandle.setScore(td.getScore(), td.getMate());
+                        }
+                        return;
+                    }
                     // 只保留最近 128 条思考细节，避免列表无限增长。
                     listView.getItems().addFirst(td);
                     if (listView.getItems().size() > 128) {
@@ -1559,6 +1621,122 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
                 });
             }
         }
+    }
+
+    private void applyEngineLogVisibility() {
+        boolean show = prop.isShowEngineLog();
+        if (listViewPane != null) {
+            listViewPane.setVisible(true);
+            listViewPane.setManaged(true);
+            if (annotationListView != null) {
+                listViewPane.setCenter(show ? listView : annotationListView);
+            }
+        }
+        if (engineTopTitleLabel != null) {
+            engineTopTitleLabel.setText(show ? "引擎" : "招法讲解");
+        }
+        if (engineComboBox != null) {
+            engineComboBox.setVisible(show);
+            engineComboBox.setManaged(show);
+        }
+        if (threadComboBox != null) {
+            threadComboBox.setVisible(show);
+            threadComboBox.setManaged(show);
+        }
+        if (hashComboBox != null) {
+            hashComboBox.setVisible(show);
+            hashComboBox.setManaged(show);
+        }
+        if (hashUnitLabel != null) {
+            hashUnitLabel.setVisible(show);
+            hashUnitLabel.setManaged(show);
+        }
+        if (engineTopToolBar != null) {
+            engineTopToolBar.requestLayout();
+        }
+        if (!show && listView != null) {
+            listView.getItems().clear();
+        }
+    }
+
+    private void initAnnotationView() {
+        annotationListView = new ListView<>();
+        annotationListView.setStyle(listView.getStyle());
+        annotationListView.getStylesheets().addAll(listView.getStylesheets());
+        annotationListView.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle("");
+                } else {
+                    Label label = new Label(item);
+                    label.setWrapText(true);
+                    label.prefWidthProperty().bind(annotationListView.widthProperty().subtract(20));
+                    boolean latest = getIndex() == 0;
+                    boolean critical = isCriticalAnnotation(item);
+                    if (latest) {
+                        label.setTextFill(Color.web("#B71C1C"));
+                        setStyle("-fx-background-color: #FFECEC;");
+                    } else {
+                        label.setTextFill(critical ? Color.RED : Color.web("#403e3e"));
+                        setStyle("");
+                    }
+                    setText(null);
+                    setGraphic(label);
+                }
+            }
+        });
+    }
+
+    private void appendAnnotationToPanel(String annotation, int ply, boolean moverRed) {
+        if (StringUtils.isEmpty(annotation) || annotationListView == null) {
+            return;
+        }
+        if (!shouldDisplayOwnSide(moverRed)) {
+            return;
+        }
+        int round = Math.max(1, (ply + 1) / 2);
+        String side = moverRed ? "红方" : "黑方";
+        String text = "第" + round + "回合(" + side + ")  " + annotation;
+        annotationListView.getItems().addFirst(text);
+        if (annotationListView.getItems().size() > 128) {
+            annotationListView.getItems().removeLast();
+        }
+    }
+
+    private void showAnnotationOnTop(String annotation, boolean moverRed) {
+        if (StringUtils.isEmpty(annotation) || prop.isShowEngineLog() || !prop.isLinkShowInfo()) {
+            return;
+        }
+        if (!shouldDisplayOwnSide(moverRed)) {
+            return;
+        }
+        infoShowLabel.setText(annotation);
+        infoShowLabel.setTextFill(isCriticalAnnotation(annotation) ? Color.RED : Color.web("#403e3e"));
+    }
+
+    private boolean shouldDisplayOwnSide(boolean moverRed) {
+        // 单边人机时：只显示“用户自己方”的注解。
+        // robotRed=true 代表引擎走红，用户是黑；robotBlack=true 代表引擎走黑，用户是红。
+        if (robotRed.getValue() && !robotBlack.getValue()) {
+            return !moverRed;
+        }
+        if (!robotRed.getValue() && robotBlack.getValue()) {
+            return moverRed;
+        }
+        // 双方都由同一方控制（都开/都关）时，不做过滤。
+        return true;
+    }
+
+    private boolean isCriticalAnnotation(String annotation) {
+        return annotation.contains("杀棋")
+                || annotation.contains("将军")
+                || annotation.contains("吃子")
+                || annotation.contains("终结")
+                || annotation.contains("连续威胁");
     }
 
     @Override

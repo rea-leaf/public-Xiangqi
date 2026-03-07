@@ -83,6 +83,17 @@
             <items>
                   <CheckMenuItem fx:id="menuOfStepTip" mnemonicParsing="false" onAction="#stepTipChecked" text="棋步提示" />
                   <CheckMenuItem fx:id="menuOfStepSound" mnemonicParsing="false" onAction="#stepSoundClick" text="走棋音效" />
+                  <CheckMenuItem fx:id="menuOfColloquialReview" mnemonicParsing="false" onAction="#colloquialReviewClick" text="口语复盘注解" />
+                  <Menu mnemonicParsing="false" text="顶部显示内容">
+                     <items>
+                        <RadioMenuItem fx:id="menuOfShowAnnotation" mnemonicParsing="false" onAction="#showAnnotationModeClick" selected="true" text="注解">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="displayContentGroup" />
+                           </toggleGroup>
+                        </RadioMenuItem>
+                        <RadioMenuItem fx:id="menuOfShowEngineLog" mnemonicParsing="false" onAction="#showEngineLogModeClick" text="引擎日志" toggleGroup="$displayContentGroup" />
+                     </items>
+                  </Menu>
                   <CheckMenuItem fx:id="menuOfShowNumber" mnemonicParsing="false" onAction="#showNumberClick" text="显示线路" />
                   <CheckMenuItem fx:id="menuOfTopWindow" mnemonicParsing="false" onAction="#topWindowClick" text="窗口置顶" />
                   <CheckMenuItem fx:id="menuOfShowStatus" mnemonicParsing="false" onAction="#showStatusBarClick" text="显示状态栏" />
@@ -234,15 +245,15 @@
                                           <ListView fx:id="listView" minHeight="-Infinity" minWidth="-Infinity" prefHeight="0.0" prefWidth="0.0" stylesheets="@../style/app.css" BorderPane.alignment="CENTER" />
                                        </center>
                                        <top>
-                                          <ToolBar minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" BorderPane.alignment="CENTER">
-                                             <items>
-                                                <Label text="引擎" />
-                                                <ComboBox fx:id="engineComboBox" editable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="22.0" prefWidth="95.0" stylesheets="@../style/combobox.css" />
-                                                <ComboBox fx:id="threadComboBox" editable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="22.0" prefWidth="60.0" stylesheets="@../style/combobox.css" />
-                                                <ComboBox fx:id="hashComboBox" editable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="22.0" prefWidth="65.0" stylesheets="@../style/combobox.css" />
-                                                <Label text="MB" />
-                                             </items>
-                                          </ToolBar>
+                                           <ToolBar fx:id="engineTopToolBar" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" BorderPane.alignment="CENTER">
+                                              <items>
+                                                 <Label fx:id="engineTopTitleLabel" text="引擎" />
+                                                 <ComboBox fx:id="engineComboBox" editable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="22.0" prefWidth="95.0" stylesheets="@../style/combobox.css" />
+                                                 <ComboBox fx:id="threadComboBox" editable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="22.0" prefWidth="60.0" stylesheets="@../style/combobox.css" />
+                                                 <ComboBox fx:id="hashComboBox" editable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="22.0" prefWidth="65.0" stylesheets="@../style/combobox.css" />
+                                                 <Label fx:id="hashUnitLabel" text="MB" />
+                                              </items>
+                                           </ToolBar>
                                        </top>
                                     </BorderPane>
                                  </children></AnchorPane>
