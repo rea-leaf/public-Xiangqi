@@ -1,5 +1,9 @@
 package com.sojourners.chess.model;
 
+/**
+ * LocalBook 类。
+ * 业务数据模型。
+ */
 public class LocalBook {
     private String path;
 

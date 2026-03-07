@@ -7,6 +7,10 @@ import com.sojourners.chess.util.PathUtils;
 
 import java.awt.image.BufferedImage;
 
+/**
+ * OnnxModel 类。
+ * ONNX 识别模型与推理逻辑相关类型。
+ */
 public abstract class OnnxModel {
 
     public static final double PADDING = 0.8d;

@@ -6,6 +6,10 @@ import org.jnativehook.NativeHookException;
 import org.jnativehook.mouse.NativeMouseEvent;
 import org.jnativehook.mouse.NativeMouseInputListener;
 
+/**
+ * GlobalMouseListener 类。
+ * 全局鼠标监听相关类型。
+ */
 public class GlobalMouseListener implements NativeMouseInputListener {
 
     private MouseListenCallBack cb;

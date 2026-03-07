@@ -5,6 +5,10 @@ import java.awt.datatransfer.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
+/**
+ * ClipboardUtils 类。
+ * 通用工具类。
+ */
 public class ClipboardUtils {
     /**
      * 从剪切板获得文字。

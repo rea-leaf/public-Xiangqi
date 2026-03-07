@@ -15,6 +15,10 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.control.RadioButton;
 
+/**
+ * EditChessBoardController 类。
+ * JavaFX 界面控制器，负责对应对话框/页面交互。
+ */
 public class EditChessBoardController {
 
     @FXML

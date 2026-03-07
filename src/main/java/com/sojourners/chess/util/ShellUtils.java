@@ -3,6 +3,10 @@ package com.sojourners.chess.util;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 
+/**
+ * ShellUtils 类。
+ * 通用工具类。
+ */
 public class ShellUtils {
 
     public static String exec(String command) {

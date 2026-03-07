@@ -9,6 +9,10 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * CloudOpenBook 类。
+ * 开局库查询、聚合与策略相关类型。
+ */
 public class CloudOpenBook implements OpenBook {
 
     private final static String URL = "http://www.chessdb.cn/chessdb.php";

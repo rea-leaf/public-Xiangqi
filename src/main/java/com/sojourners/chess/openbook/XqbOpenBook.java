@@ -9,6 +9,10 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * XqbOpenBook 类。
+ * 开局库查询、聚合与策略相关类型。
+ */
 public class XqbOpenBook implements OpenBook {
 
     private Connection connection;

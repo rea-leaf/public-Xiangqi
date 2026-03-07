@@ -3,6 +3,10 @@ package com.sojourners.chess.manual;
 import com.sojourners.chess.model.ManualRecord;
 import java.io.Serializable;
 
+/**
+ * ChessManual 类。
+ * 棋谱读写与棋谱结构相关类型。
+ */
 public class ChessManual implements Serializable {
 
     private static final long serialVersionUID = 1L;

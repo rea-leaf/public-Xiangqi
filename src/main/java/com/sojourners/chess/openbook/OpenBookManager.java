@@ -7,11 +7,17 @@ import com.sojourners.chess.model.BookData;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * OpenBookManager 类。
+ * 开局库查询、聚合与策略相关类型。
+ */
 public class OpenBookManager {
 
     private volatile static OpenBookManager instance;
 
+    /** 云库实现（chessdb）。 */
     private OpenBook cloudOpenBook;
+    /** 本地库实现列表（按配置顺序）。 */
     private List<OpenBook> localOpenBooks;
     Properties prop;
 
@@ -30,6 +36,7 @@ public class OpenBookManager {
     }
 
     public synchronized void setLocalOpenBooks() {
+        // 重载本地库：先关闭旧连接，再按扩展名创建对应实现。
         close();
         localOpenBooks.clear();
         for (String path : prop.getOpenBookList()) {
@@ -48,6 +55,10 @@ public class OpenBookManager {
     }
 
     public synchronized List<BookData> queryBook(char[][] b, boolean redGo, boolean offManual) {
+        // 查询策略：
+        // 1) 可选查云库；
+        // 2) 未脱谱时查本地库；
+        // 3) 按 localBookFirst 合并结果顺序。
 
         List<BookData> cloudResults = new ArrayList<>();
         if (prop.getUseCloudBook()) {

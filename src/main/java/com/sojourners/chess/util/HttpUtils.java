@@ -6,6 +6,10 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+/**
+ * HttpUtils 类。
+ * 通用工具类。
+ */
 public class HttpUtils {
 
     private static final String CONTENT_TYPE = "Content-Type";

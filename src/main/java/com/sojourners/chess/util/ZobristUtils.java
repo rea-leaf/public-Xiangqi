@@ -3,6 +3,10 @@ package com.sojourners.chess.util;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * ZobristUtils 类。
+ * 通用工具类。
+ */
 public class ZobristUtils {
 
     public static String getMoveFromVmove(int vmove, boolean leftRightSwap) {

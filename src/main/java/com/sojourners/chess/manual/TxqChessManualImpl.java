@@ -6,6 +6,10 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+/**
+ * TxqChessManualImpl 类。
+ * 棋谱读写与棋谱结构相关类型。
+ */
 public class TxqChessManualImpl implements ChessManualService {
 
     @Override

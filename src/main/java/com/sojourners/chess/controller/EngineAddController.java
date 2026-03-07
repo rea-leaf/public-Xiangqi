@@ -21,6 +21,10 @@ import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * EngineAddController 类。
+ * JavaFX 界面控制器，负责对应对话框/页面交互。
+ */
 public class EngineAddController {
 
 

@@ -10,6 +10,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
+/**
+ * PgnChessManualImpl 类。
+ * 棋谱读写与棋谱结构相关类型。
+ */
 public class PgnChessManualImpl implements ChessManualService {
 
     @Override

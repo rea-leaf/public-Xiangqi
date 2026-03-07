@@ -1,5 +1,9 @@
 package com.sojourners.chess.lock;
 
+/**
+ * SingleLock 类。
+ * 线程协作与同步控制相关类型。
+ */
 public class SingleLock {
     private volatile boolean isLock = false;
 

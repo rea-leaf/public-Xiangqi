@@ -11,10 +11,15 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Properties 类。
+ * 项目核心类型。
+ */
 public class Properties implements Serializable {
 
     private static final long serialVersionUID = -1410031608529065857L;
 
+    /** 单例配置对象。 */
     private static Properties prop;
 
     private ChessBoard.BoardSize boardSize;
@@ -121,6 +126,7 @@ public class Properties implements Serializable {
 
     public static synchronized Properties getInstance() {
         if (prop == null) {
+            // 配置文件位于程序目录下，文件名固定为 "properties"（Java 序列化）。
             String path = PathUtils.getJarPath() + "properties";
             File file = new File(path);
             if (file.exists()) {
@@ -139,6 +145,7 @@ public class Properties implements Serializable {
                     }
                 }
             } else {
+                // 首次启动默认配置。
                 try {
                     List<EngineConfig> engineConfigList = new ArrayList<>();
                     prop = new Properties(ChessBoard.BoardSize.AUTOFIT_BOARD, true,
@@ -159,6 +166,7 @@ public class Properties implements Serializable {
     public void save() {
         ObjectOutputStream os = null;
         try {
+            // 全量序列化保存当前配置。
             String path = PathUtils.getJarPath() + "properties";
             File file = new File(path);
             os = new ObjectOutputStream(new FileOutputStream(file));

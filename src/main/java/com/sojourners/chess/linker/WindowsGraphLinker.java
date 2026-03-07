@@ -11,6 +11,10 @@ import com.sun.jna.platform.win32.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
+/**
+ * WindowsGraphLinker 类。
+ * 连线功能抽象与平台实现相关类型。
+ */
 public class WindowsGraphLinker extends AbstractGraphLinker implements MouseListenCallBack {
 
     private WinDef.HWND hwnd;

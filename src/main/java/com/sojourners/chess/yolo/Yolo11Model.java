@@ -5,6 +5,10 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Yolo11Model 类。
+ * ONNX 识别模型与推理逻辑相关类型。
+ */
 public class Yolo11Model extends Yolo5Model {
 
     float CONFIDENCE = 0.5f;

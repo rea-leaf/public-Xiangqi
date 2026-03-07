@@ -3,6 +3,10 @@ package com.sojourners.chess.util;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * ExecutorsUtils 类。
+ * 通用工具类。
+ */
 public class ExecutorsUtils {
 
     private static volatile ExecutorsUtils instance;

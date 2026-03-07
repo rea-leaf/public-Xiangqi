@@ -15,6 +15,10 @@ import javafx.stage.FileChooser;
 
 import java.io.File;
 
+/**
+ * LocalBookController 类。
+ * JavaFX 界面控制器，负责对应对话框/页面交互。
+ */
 public class LocalBookController {
     @FXML
     private TableView table;

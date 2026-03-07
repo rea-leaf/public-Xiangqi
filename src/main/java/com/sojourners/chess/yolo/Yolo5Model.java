@@ -11,6 +11,10 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.*;
 
+/**
+ * Yolo5Model 类。
+ * ONNX 识别模型与推理逻辑相关类型。
+ */
 public class Yolo5Model extends OnnxModel {
 
     @Override

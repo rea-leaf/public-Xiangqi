@@ -13,31 +13,40 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+/**
+ * 连线核心抽象基类。
+ *
+ * <p>职责：
+ * 1) 识别目标窗口中的棋盘位置与棋子布局；
+ * 2) 对比“外部平台棋盘”与“本地引擎棋盘”，推断下一步动作；
+ * 3) 在自动走棋模式下，向目标窗口发送点击事件；
+ * 4) 对接不同系统的平台实现（Windows/Linux/Mac）。
+ */
 public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
 
-    /**
-     * 扫描线程
-     */
+    /** 扫描线程（虚拟线程）。 */
     private Thread thread;
-    /**
-     * 棋盘区域
-     */
+    /** 当前识别到的棋盘区域（相对目标窗口）。 */
     private Rectangle boardPos;
-    /**
-     * 识别棋盘 暂存
-     */
+    /** 识别棋盘暂存缓冲区。 */
     private char[][] board2 = new char[10][9];
 
+    /** 动画确认时的上一帧缓冲区。 */
     private char[][] board1 = new char[10][9];
 
+    /** ONNX 棋盘识别模型。 */
     private OnnxModel aiModel;
 
+    /** 与控制层交互的回调。 */
     private LinkerCallBack callBack;
 
+    /** 前台截图与鼠标模拟。 */
     private Robot robot;
 
+    /** 连续疑似“新棋局”计数，达到阈值后触发重初始化。 */
     private int count;
 
+    /** 暂停扫描标记（局面切换时短暂停顿）。 */
     private volatile boolean pause;
 
     private Properties prop;
@@ -52,7 +61,9 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
     }
 
     /**
-     * 开始连线
+     * 开始连线流程。
+     *
+     * <p>具体“如何选择目标窗口”由子类实现。
      */
     @Override
     public void start() {
@@ -60,6 +71,7 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
     }
 
     void scan() {
+        // 统一由后台线程执行识别与同步循环。
         this.thread = Thread.ofVirtual().unstarted(this);
         this.thread.start();
     }
@@ -87,6 +99,7 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
 
     @Override
     public void run() {
+        // 外层循环：负责“找到窗口与初始化棋盘”。
         while (!Thread.currentThread().isInterrupted()) {
             if (!findBoardPosition()) {
                 sleep(1000);
@@ -96,6 +109,7 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
                 sleep(1000);
                 continue;
             }
+            // 内层循环：稳定扫描局面变化并执行同步动作。
             while (!Thread.currentThread().isInterrupted()) {
                 sleep(prop.getLinkScanTime());
                 if (!callBack.isThinking() && !pause) {
@@ -116,8 +130,10 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
                         continue;
                     }
 
+                    // 对比连线棋盘与引擎棋盘，推断应执行的动作。
                     Action action = compareBoard(board2, callBack.getEngineBoard(), isReverse, callBack.isWatchMode());
                     if (prop.isLinkAnimation() && needConfirm(board2, callBack.getEngineBoard(), action)) {
+                        // 动画确认：等待两帧收敛，降低过渡动画导致的误判。
                         boolean f = false;
                         do {
                             char[][] tmp = board1;
@@ -146,9 +162,11 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
                     if (action != null) {
                         System.out.println("action " + action);
                         if (action.flag == 1) {
+                            // 对方已走棋：同步到本地引擎棋盘。
                             callBack.linkerMove(action.x1, action.y1, action.x2, action.y2);
 
                         } else if (action.flag == 2) {
+                            // 引擎已走棋：同步到外部平台（自动点击）。
                             if (isReverse) {
                                 action.y1 = 9 - action.y1;
                                 action.y2 = 9 - action.y2;
@@ -158,9 +176,11 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
                             autoClick(action.x1, action.y1, action.x2, action.y2);
 
                         } else if (action.flag == 3) {
+                            // 明确识别到新棋局：退出内循环并重新初始化。
                             break;
                         }
                         if (action.flag == 4) {
+                            // 可能是新棋局：连续出现多次再触发重置，避免瞬时误判。
                             count++;
                             if (count > 9) {
                                 break;
@@ -175,6 +195,14 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
         }
     }
 
+    /**
+     * 棋盘对比后的动作描述。
+     * flag:
+     * 1 = 对方走子（需同步到引擎）
+     * 2 = 引擎走子（需同步到平台）
+     * 3 = 识别到新棋局（重初始化）
+     * 4 = 疑似新棋局（继续观察）
+     */
     class Action {
         int flag;
         int x1;
@@ -205,6 +233,7 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
     }
 
     private boolean needConfirm(char[][] linkBoard, char[][] engineBoard, Action action) {
+        // 对“吃车/吃炮”等容易受动画影响的场景做额外确认。
         if (action == null) {
             return false;
         }
@@ -290,15 +319,10 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
     }
 
     /**
-     * 对比棋盘，计算出当前操作
-     * flag： 1对方已走棋，需要同步到引擎
-     *      2引擎已走棋，需要同步到目标平台
-     *      3识别到新棋局
-     *      4可能识别到新棋局
-     * @param linkBoard
-     * @param engineBoard
-     * @param robotBlack
-     * @return
+     * 对比棋盘并推断动作。
+     *
+     * <p>核心思想：统计差异点并寻找“唯一合法走法”映射。
+     * 如果差异过多，则判定为新棋局或疑似新棋局。
      */
     private Action compareBoard(char[][] linkBoard, char[][] engineBoard, boolean robotBlack, boolean analysisMode) {
         int diff1 = 0, diff2 = 0, diff3 = 0;
@@ -415,11 +439,7 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
         }
     }
 
-    /**
-     * 前台截图
-     * @param windowPos
-     * @return
-     */
+    /** 前台截图（目标窗口可见区域）。 */
     public BufferedImage screenshotByFront(Rectangle windowPos) {
         if (windowPos.width == 0 || windowPos.height == 0) {
             return null;
@@ -427,12 +447,7 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
         return robot.createScreenCapture(windowPos);
     }
 
-    /**
-     * 前台点击
-     * @param windowPos
-     * @param p1
-     * @param p2
-     */
+    /** 前台点击（按起点->终点执行一次走子）。 */
     @Override
     public void mouseClickByFront(Rectangle windowPos, Point p1, Point p2) {
 
@@ -461,10 +476,7 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
 
     }
 
-    /**
-     * 寻找棋盘区域
-     * @return
-     */
+    /** 在窗口截图中定位棋盘矩形。 */
     boolean findBoardPosition() {
         BufferedImage img = screenshot(true);
         this.boardPos = this.aiModel.findBoardPosition(img);
@@ -472,9 +484,8 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
     }
 
     /**
-     * 截图
-     * @param fullScreen
-     * @return
+     * 统一截图入口。
+     * fullScreen=true 时用于找棋盘区域；false 时截取棋盘区域用于识别棋子。
      */
     BufferedImage screenshot(boolean fullScreen) {
         if (prop.isLinkBackMode()) {
@@ -512,6 +523,7 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
         return f;
     }
     private boolean reverse(char[][] board) throws Exception {
+        // 基于将帅位置判断是否上下颠倒，并在必要时翻转为统一视角。
         // 是否翻转
         int rowRedKing = -1, rowBlackKing = -1;
         for (int i = 0; i < 10; i++) {
@@ -539,10 +551,7 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
         return isReverse;
     }
 
-    /**
-     * 初始化棋盘局面
-     * @return
-     */
+    /** 初始化连线棋盘，并回调控制层创建对应局面。 */
     private boolean initChessBoard() {
         if (!findChessBoard(board2)) {
             return false;
@@ -564,13 +573,7 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
         return true;
     }
 
-    /**
-     * 自动点击走棋
-     * @param x1
-     * @param y1
-     * @param x2
-     * @param y2
-     */
+    /** 自动点击走棋（按配置走前台/后台点击路径）。 */
     public void autoClick(int x1, int y1, int x2, int y2) {
 
         Point p1 = getPosition(x1, y1);
@@ -600,9 +603,7 @@ public abstract class AbstractGraphLinker implements GraphLinker, Runnable {
         return p;
     }
 
-    /**
-     * 停止连线
-     */
+    /** 停止连线扫描线程。 */
     @Override
     public void stop() {
         if (thread != null && thread.isAlive()) {

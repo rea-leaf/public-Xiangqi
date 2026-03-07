@@ -1,3 +1,7 @@
+/**
+ * 模块定义。
+ * Java 模块声明，定义运行时依赖与导出包。
+ */
 open module Xiangqi {
     requires javafx.swing;
     requires javafx.graphics;

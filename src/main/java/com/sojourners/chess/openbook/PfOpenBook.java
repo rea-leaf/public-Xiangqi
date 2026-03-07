@@ -8,6 +8,10 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * PfOpenBook 类。
+ * 开局库查询、聚合与策略相关类型。
+ */
 public class PfOpenBook implements OpenBook {
 
     private Connection connection;

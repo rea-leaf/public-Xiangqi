@@ -4,6 +4,10 @@ import com.sun.jna.Native;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef;
 
+/**
+ * User32Extra 接口。
+ * JNA 平台扩展接口定义。
+ */
 public interface User32Extra extends User32 {
 
     User32Extra INSTANCE = Native.load("user32", User32Extra.class);

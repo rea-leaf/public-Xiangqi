@@ -55,6 +55,22 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * 主界面控制器。
+ *
+ * <p>这是应用的业务编排中心，负责协调：
+ * - 棋盘与走子交互
+ * - 引擎加载与搜索
+ * - 连线识别与自动走棋
+ * - 开局库展示与出招
+ * - 棋谱浏览、编辑与保存
+ *
+ * <p>设计上该类偏“总控”，因此状态较多，阅读时建议按以下主线理解：
+ * 1) initialize() 初始化所有组件
+ * 2) goCallBack() 在每次落子后推进全局状态
+ * 3) engineGo()/engineStop() 管理引擎思考生命周期
+ * 4) linkerXXX 回调管理连线模式与同步
+ */
 public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCallBack {
 
     @FXML
@@ -455,6 +471,8 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     }
     private void goCallBack(String move) {
+        // 统一落子后的收敛入口：
+        // 1. 更新棋谱 2. 更新曲线 3. 切换行棋方 4. 决定引擎还是库招继续接管
         // 记录棋谱
         List<String> nextList = chessManualHandle.boardMove(move, board.translate(move, true));
         board.setManualList(nextList);
@@ -496,6 +514,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     }
 
     private void doOpenBook() {
+        // 开局库查询放在虚拟线程，避免阻塞 JavaFX UI 线程。
         if (useOpenBook.getValue()) {
             Thread.startVirtualThread(() -> {
                 List<BookData> results = OpenBookManager.getInstance().queryBook(board.getBoard(), redGo, chessManualHandle.getP() / 2 >= Properties.getInstance().getOffManualSteps());
@@ -646,6 +665,8 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         charPane.setCenter(lineChart);
     }
     public void initialize() {
+        // JavaFX 在 FXML 注入完成后自动调用此方法。
+        // 这里按“从基础配置到功能模块”的顺序初始化，尽量避免模块间前置依赖冲突。
         // 读取配置
         prop = Properties.getInstance();
         // 思考细节listView
@@ -913,6 +934,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
      * @param fenCode 传null 新建默认初始局面；传fenCode 则根据fen创建局面
      */
     private void newChessBoard(String fenCode, boolean fromManual) {
+        // 新局面重建是全量刷新流程，会清理引擎状态、提示箭头、库招显示等。
         // 重置按钮
         robotRed.setValue(false);
         redButton.setDisable(false);
@@ -1036,6 +1058,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     }
 
     private void setLinkMode(String t1) {
+        // 连线模式切换时，需要同步处理按钮互斥、引擎状态、是否立即触发搜索。
         if (linkMode.getValue()) {
             if ("自动走棋".equals(t1)) {
                 // 观战模式切换自动走棋，先停止引擎
@@ -1100,6 +1123,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
             if (StringUtils.isNotEmpty(name)) {
                 for (EngineConfig ec : prop.getEngineConfigList()) {
                     if (name.equals(ec.getName())) {
+                        // 热切换引擎：先关闭旧进程，再拉起新进程。
                         if (engine != null) {
                             engine.close();
                         }
@@ -1139,6 +1163,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
             ChessBoard.Step s = board.stepForBoard(first);
 
             Platform.runLater(() -> {
+                // 一切 UI 操作都在 JavaFX 线程执行，避免跨线程 UI 访问异常。
                 board.move(s.getStart().getX(), s.getStart().getY(), s.getEnd().getX(), s.getEnd().getY());
                 board.setTip(second, null, 1);
 
@@ -1157,6 +1182,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
             td.generate(redGo, isReverse.getValue(), board);
             if (td.getValid()) {
                 Platform.runLater(() -> {
+                    // 只保留最近 128 条思考细节，避免列表无限增长。
                     listView.getItems().addFirst(td);
                     if (listView.getItems().size() > 128) {
                         listView.getItems().removeLast();
@@ -1232,6 +1258,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
      */
     @Override
     public void linkerInitChessBoard(String fenCode, boolean isReverse) {
+        // 连线初始化回调：以识别局面为准重建本地棋盘。
         Platform.runLater(() -> {
             newChessBoard(fenCode);
             if (isReverse) {
@@ -1274,6 +1301,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     }
 
     private void switchPlayer(boolean f) {
+        // 交换行棋方本质上是重建 FEN，但要保留当前按钮状态与连线状态。
         engineStop();
 
         graphLinker.pause();

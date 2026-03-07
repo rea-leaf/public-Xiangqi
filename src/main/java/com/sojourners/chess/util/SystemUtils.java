@@ -3,6 +3,10 @@ package com.sojourners.chess.util;
 import java.awt.*;
 import java.net.URI;
 
+/**
+ * SystemUtils 类。
+ * 通用工具类。
+ */
 public class SystemUtils {
 
     public static void openBrowser(String url) {

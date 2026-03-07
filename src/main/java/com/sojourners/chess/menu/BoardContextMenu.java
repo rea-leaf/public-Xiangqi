@@ -6,6 +6,10 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.*;
 
+/**
+ * BoardContextMenu 类。
+ * 棋盘右键菜单相关类型。
+ */
 public class BoardContextMenu extends ContextMenu {
 
     /** * 单例 */

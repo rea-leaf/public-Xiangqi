@@ -1,5 +1,9 @@
 package com.sojourners.chess.util;
 
+/**
+ * StringUtils 类。
+ * 通用工具类。
+ */
 public class StringUtils {
 
     public static boolean isDigit(String str) {

@@ -13,6 +13,10 @@ import javafx.scene.transform.Rotate;
 import java.util.List;
 
 
+/**
+ * BaseBoardRender 类。
+ * 棋盘绘制与棋局显示相关类型。
+ */
 public abstract class BaseBoardRender implements BoardRender {
 
     private Canvas canvas;

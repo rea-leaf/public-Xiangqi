@@ -3,6 +3,10 @@ package com.sojourners.chess.model;
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 
+/**
+ * EngineConfig 类。
+ * 业务数据模型。
+ */
 public class EngineConfig implements Serializable {
 
     private static final long serialVersionUID = 1323134234;

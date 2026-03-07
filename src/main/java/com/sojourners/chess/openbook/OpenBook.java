@@ -8,6 +8,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * OpenBook 接口。
+ * 开局库查询、聚合与策略相关类型。
+ */
 public interface OpenBook {
 
     List<BookData> get(char[][] board, boolean redGo);

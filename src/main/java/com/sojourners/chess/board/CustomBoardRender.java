@@ -9,6 +9,10 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * CustomBoardRender 类。
+ * 棋盘绘制与棋局显示相关类型。
+ */
 public class CustomBoardRender extends BaseBoardRender {
 
     private Image bgImage;

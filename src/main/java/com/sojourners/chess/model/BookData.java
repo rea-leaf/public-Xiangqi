@@ -1,5 +1,9 @@
 package com.sojourners.chess.model;
 
+/**
+ * BookData 类。
+ * 业务数据模型。
+ */
 public class BookData {
 
     private String move;

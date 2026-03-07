@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.io.Serializable;
 
+/**
+ * ManualRecord 类。
+ * 业务数据模型。
+ */
 public class ManualRecord implements Serializable {
 
     private static final long serialVersionUID = 1L;

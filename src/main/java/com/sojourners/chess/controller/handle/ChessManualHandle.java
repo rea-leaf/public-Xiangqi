@@ -33,6 +33,10 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
+/**
+ * ChessManualHandle 类。
+ * 棋谱管理相关的回调与处理逻辑。
+ */
 public class ChessManualHandle {
 
     private ChessManualCallBack cb;

@@ -10,6 +10,10 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
 
 
+/**
+ * LinkSettingController 类。
+ * JavaFX 界面控制器，负责对应对话框/页面交互。
+ */
 public class LinkSettingController {
 
     @FXML

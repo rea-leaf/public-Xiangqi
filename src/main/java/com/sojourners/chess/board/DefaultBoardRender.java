@@ -6,6 +6,10 @@ import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
+/**
+ * DefaultBoardRender 类。
+ * 棋盘绘制与棋局显示相关类型。
+ */
 public class DefaultBoardRender extends BaseBoardRender {
 
     private Image bgImage;

@@ -3,6 +3,10 @@ package com.sojourners.chess.board;
 
 import javafx.scene.paint.Color;
 
+/**
+ * BoardRender 接口。
+ * 棋盘绘制与棋局显示相关类型。
+ */
 public interface BoardRender {
 
     void drawBackgroundImage(double width, double height);

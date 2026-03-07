@@ -1,5 +1,9 @@
 package com.sojourners.chess.util;
 
+/**
+ * MathUtils 类。
+ * 通用工具类。
+ */
 public class MathUtils {
 
     public static double calculateDistance(int x1, int y1, int x2, int y2) {

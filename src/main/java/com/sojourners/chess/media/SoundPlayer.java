@@ -4,6 +4,10 @@ import javafx.scene.media.AudioClip;
 
 import java.io.File;
 
+/**
+ * SoundPlayer 类。
+ * 音频播放相关类型。
+ */
 public class SoundPlayer {
     private AudioClip pick;
 

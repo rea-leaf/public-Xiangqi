@@ -13,14 +13,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 棋盘
+ * 棋盘领域模型 + 渲染入口。
+ *
+ * <p>职责：
+ * 1) 维护当前局面(board)与交互状态(选中点、上一步、提示箭头)；
+ * 2) 处理鼠标落子、合法性校验、走子音效；
+ * 3) FEN 与引擎步法互转；
+ * 4) 将状态交给 Render 层完成绘制。
  */
 public class ChessBoard {
 
+    /** 当前棋盘渲染器（默认主题/自定义主题）。 */
     private static BaseBoardRender boardRender;
 
+    /** 棋盘局面：10x9。 */
     private static volatile char[][] board = new char[10][9];
 
+    /** 走法翻译时使用的临时棋盘副本。 */
     private static char[][] copyBoard = new char[10][9];
 
     private BoardSize boardSize;
@@ -34,6 +43,7 @@ public class ChessBoard {
     private boolean manualTip;
     private List<Step> manualList = new ArrayList<>();
 
+    /** 棋盘音效播放器。 */
     private static SoundPlayer sound;
 
     static {
@@ -152,7 +162,7 @@ public class ChessBoard {
         this.stepSound = stepSound;
         this.showNumber = showNumber;
         this.showMultiPV = showMultiPV;
-        // 设置局面
+        // 设置局面（为空则初始化标准开局）
         setNewBoard(fenCode);
         // 设置棋盘大小
         this.boardSize = bs;
@@ -163,6 +173,7 @@ public class ChessBoard {
     }
 
     public static void initChessBoard(char[][] board) {
+        // 标准中国象棋初始局面。
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 9; j++) {
                 if (i == 0 && (j == 0 || j == 8)) {
@@ -218,6 +229,7 @@ public class ChessBoard {
     }
 
     public String mouseClick(int x, int y, boolean canRedGo, boolean canBlackGo) {
+        // 将画布坐标映射为棋盘坐标（考虑 padding、棋子尺寸、翻转状态）。
         int padding = boardRender.getPadding(this.boardSize);
         int piece = boardRender.getPieceSize(this.boardSize);
         int i = (x - padding) / piece;
@@ -230,6 +242,7 @@ public class ChessBoard {
         }
 
         if (remark != null) {
+            // 已选中棋子：本次点击可能是改选同色子，也可能是尝试落子。
             boolean isRed = XiangqiUtils.isRed(board[remark.y][remark.x]);
             if (isRed && !canRedGo || !isRed && !canBlackGo) {
                 return null;
@@ -244,6 +257,7 @@ public class ChessBoard {
                 return move(remark.x, remark.y, i, j);
             }
         } else {
+            // 未选中棋子：仅在可行动方点击己方棋子时进入选中态。
             if (board[j][i] != ' ') {
                 boolean isRed = XiangqiUtils.isRed(board[j][i]);
                 if (!(isRed && !canRedGo || !isRed && !canBlackGo)) {
@@ -266,6 +280,7 @@ public class ChessBoard {
     }
 
     public static String fenCode(char[][] board, Boolean redGo) {
+        // 生成 FEN 主体 + 可选行棋方字段。
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < board.length; i++) {
             int count = 0;
@@ -370,6 +385,7 @@ public class ChessBoard {
     }
 
     public String move(int x1, int y1, int x2, int y2) {
+        // 先试走，再校验“是否送将”；非法则回滚。
         char tmp = board[y2][x2];
         boolean isRed = XiangqiUtils.isRed(board[y1][x1]);
         board[y2][x2] = board[y1][x1];
@@ -384,6 +400,7 @@ public class ChessBoard {
             return null;
         }
         if (stepSound) {
+            // 根据局面结果选择不同音效：绝杀/将军/吃子/平移。
             if (XiangqiUtils.isSha(board, !isRed)) {
                 // 绝杀
                 sound.over();
@@ -409,6 +426,7 @@ public class ChessBoard {
     }
 
     public List<String> getTacticList(boolean redGo) {
+        // 枚举当前走棋方的全部合法着法，用于“变招搜索”限定 searchmoves。
         List<String> list = new ArrayList<>();
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
@@ -436,6 +454,7 @@ public class ChessBoard {
     }
 
     private void paint() {
+        // 所有绘制统一收口到 Render 层，避免 UI 逻辑散落。
         this.boardRender.paint(boardSize, this.board, prevStep, remark, stepTip,
                 showMultiPV, moveTips, isReverse, showNumber, manualTip, manualList);
     }
@@ -526,6 +545,7 @@ public class ChessBoard {
     }
 
     public void autoFitSize(double width, double height, double position) {
+        // 自适应策略：依据可用区域反推棋子像素，并设下限避免过小不可读。
         if (boardSize == BoardSize.AUTOFIT_BOARD) {
             if (Properties.getInstance().isShowChessNotation()) {
                 width = width - 240;

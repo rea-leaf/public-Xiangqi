@@ -9,6 +9,10 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+/**
+ * EngineManageController 类。
+ * JavaFX 界面控制器，负责对应对话框/页面交互。
+ */
 public class EngineManageController {
 
     @FXML

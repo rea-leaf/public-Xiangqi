@@ -15,39 +15,66 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 引擎封装
+ * 引擎进程封装。
+ *
+ * <p>职责边界：
+ * 1) 启动/关闭 UCI(UCCI) 引擎进程；
+ * 2) 发送 position/go/stop 等协议指令；
+ * 3) 解析引擎输出（info/bestmove）并回调到 UI 控制层；
+ * 4) 在真正发起搜索前，按配置优先查询开局库。
+ *
+ * <p>注意：本类并不直接修改 UI，所有 UI 更新交给回调实现方处理。
  */
 public class Engine {
 
+    /**
+     * 外部引擎进程句柄。
+     */
     private Process process;
 
+    /**
+     * 协议类型："uci" 或 "ucci"。
+     */
     private String protocol;
 
+    /** 当前搜索模式（固定时间/固定深度/无限分析）。 */
     private AnalysisModel analysisModel;
+    /** 搜索参数值：时间(毫秒)或深度。 */
     private long analysisValue;
 
+    /** 标记 Threads 配置是否需要在下一次搜索前下发。 */
     private volatile boolean threadNumChange;
     private int threadNum;
 
+    /** 标记 Hash 配置是否需要在下一次搜索前下发。 */
     private volatile boolean hashSizeChange;
     private int hashSize;
 
     /**
-     * 停止标志位
+     * 停止标志位。
+     *
+     * <p>在收到 bestmove 时，如果该标志为 true，说明这是上一轮搜索
+     * 的延迟返回结果，需要忽略并复位标志。
      */
     private volatile boolean stopFlag;
     private volatile long time;
 
+    /** 读取引擎标准输出。 */
     private BufferedReader reader;
 
+    /** 写入引擎标准输入。 */
     private BufferedWriter writer;
 
+    /** 向上层汇报 bestmove / info 的回调。 */
     private EngineCallBack cb;
 
+    /** 持续消费引擎输出的后台线程（虚拟线程）。 */
     private Thread thread;
 
+    /** 用于随机延迟出招（模拟人类节奏）。 */
     private Random random;
 
+    /** 当前引擎 MultiPV 值，决定 UI 是否展示多条主变。 */
     private int multiPV;
 
     public enum AnalysisModel {
@@ -69,10 +96,14 @@ public class Engine {
             multiPV = 1;
         }
 
+        // 在引擎可执行文件所在目录启动，避免相对路径资源加载失败。
         process = Runtime.getRuntime().exec(ec.getPath(), null, PathUtils.getParentDir(ec.getPath()));
         reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
 
+        // 单独线程持续读取输出：
+        // - info 行 -> thinkDetail
+        // - bestmove 行 -> bestMove
         thread = Thread.startVirtualThread(() -> {
             try {
                 String line;
@@ -89,8 +120,10 @@ public class Engine {
             }
         });
 
+        // 初始化协议握手。
         cmd(protocol);
 
+        // 下发引擎自定义选项。
         for (Map.Entry<String, String> entry : ec.getOptions().entrySet()) {
             if ("uci".equals(this.protocol)) {
                 cmd("setoption name " + entry.getKey() + " value " + entry.getValue());
@@ -145,6 +178,7 @@ public class Engine {
                 }
             })).start();
 
+            // 先尝试 UCI，再尝试 UCCI。
             bw.write("uci" + System.getProperty("line.separator"));
             bw.flush();
             Thread.sleep(1000);
@@ -185,6 +219,7 @@ public class Engine {
     }
 
     private boolean validateMove(String move) {
+        // 引擎步法格式校验：如 a0a1
         if (StringUtils.isEmpty(move) || move.length() != 4) {
             return false;
         }
@@ -197,6 +232,7 @@ public class Engine {
         return true;
     }
     private void bestMove(String msg) {
+        // stop 后迟到的 bestmove 直接丢弃。
         if (stopFlag) {
             stopFlag = false;
             return;
@@ -206,6 +242,7 @@ public class Engine {
         if (str.length < 2 || !validateMove(str[1])) {
             return;
         }
+        // 出招延迟：用于降低“秒出”观感，范围内随机。
         if (Properties.getInstance().getEngineDelayEnd() > 0 && Properties.getInstance().getEngineDelayEnd() >= Properties.getInstance().getEngineDelayStart()) {
             int t = random.nextInt(Properties.getInstance().getEngineDelayStart(), Properties.getInstance().getEngineDelayEnd());
             sleep(t);
@@ -213,6 +250,7 @@ public class Engine {
         cb.bestMove(str[1], str.length == 4 ? str[3] : null);
     }
     private void thinkDetail(String msg) {
+        // 解析 info 行（depth/score/nps/time/pv/multipv 等字段）。
         String[] str = msg.split(" ");
         ThinkData td = new ThinkData();
         List<String> detail = new ArrayList<>();
@@ -270,6 +308,7 @@ public class Engine {
             }
         }
 
+        // 低深度或极短时间阶段，允许 stopFlag 被清理，避免误伤后续正常 bestmove。
         if (td.getDepth() != null && td.getDepth() < 5) {
             stopFlag = false;
         }
@@ -287,11 +326,13 @@ public class Engine {
 
     public void analysis(String fenCode, List<String> moves, char[][] board, boolean redGo) {
         Thread.startVirtualThread(() -> {
+            // 开启库招时，优先查询开局库。
             if (Properties.getInstance().getBookSwitch()) {
                 long s = System.currentTimeMillis();
                 List<BookData> results = OpenBookManager.getInstance().queryBook(board, redGo, moves.size() / 2 >= Properties.getInstance().getOffManualSteps());
                 System.out.println("查询库时间" + (System.currentTimeMillis() - s));
                 this.cb.showBookResults(results);
+                // 有库招且不是无限分析：直接返回库招，不再启动引擎搜索。
                 if (results.size() > 0 && this.analysisModel != AnalysisModel.INFINITE) {
                     if (Properties.getInstance().getBookDelayEnd() > 0 && Properties.getInstance().getBookDelayEnd() >= Properties.getInstance().getBookDelayStart()) {
                         int t = random.nextInt(Properties.getInstance().getBookDelayStart(), Properties.getInstance().getBookDelayEnd());
@@ -307,6 +348,7 @@ public class Engine {
     }
 
     public void analysis(String fenCode, List<String> moves, List<String> tacticList) {
+        // 新搜索前先 stop，清理旧搜索状态。
         stop();
 
         if (threadNumChange) {
@@ -318,6 +360,7 @@ public class Engine {
             this.hashSizeChange = false;
         }
 
+        // 下发当前局面 + 历史走子。
         StringBuilder sb = new StringBuilder();
         sb.append("position fen ").append(fenCode);
         if (moves != null && moves.size() > 0) {
@@ -328,6 +371,7 @@ public class Engine {
         }
         cmd(sb.toString());
 
+        // 变招模式：限制 searchmoves。
         boolean hasTactics = tacticList != null && !tacticList.isEmpty();
         if (hasTactics) {
             sb = new StringBuilder();
@@ -350,6 +394,7 @@ public class Engine {
     }
 
     public void stop() {
+        // 协议层 stop + 逻辑层 stopFlag 双保险。
         stopFlag = true;
         cmd("stop");
     }
@@ -386,6 +431,7 @@ public class Engine {
 
     public void close() {
         try {
+            // 正常退出顺序：quit -> 中断读线程 -> destroy -> 关闭 IO。
             if (process.isAlive()) {
                 cmd("quit");
             }

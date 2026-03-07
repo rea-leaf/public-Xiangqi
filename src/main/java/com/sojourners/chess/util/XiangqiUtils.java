@@ -7,6 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * XiangqiUtils 类。
+ * 通用工具类。
+ */
 public class XiangqiUtils {
 
     public static final Map<Character, Character> cnMap = new HashMap<>(32);

@@ -6,6 +6,10 @@ import javafx.scene.control.ButtonType;
 
 import java.util.Optional;
 
+/**
+ * DialogUtils 类。
+ * 通用工具类。
+ */
 public class DialogUtils {
 
     public static void showErrorDialog(String title, String content) {
