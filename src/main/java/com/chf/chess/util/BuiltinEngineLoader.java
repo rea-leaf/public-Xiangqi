@@ -58,10 +58,11 @@ public class BuiltinEngineLoader {
             return;
         }
         try {
-            File enginesDir = new File(PathUtils.getJarPath(), "engines");
+            File enginesDir = new File(PathUtils.getDataPath(), "engines");
             if (!enginesDir.exists()) {
                 enginesDir.mkdirs();
             }
+            migrateLegacyEngines(enginesDir);
 
             List<String> candidates = osCandidates();
             for (String fileName : candidates) {
@@ -129,6 +130,40 @@ public class BuiltinEngineLoader {
                     out.close();
                 }
             } catch (Exception ignored) {
+            }
+        }
+    }
+
+    private static void migrateLegacyEngines(File enginesDir) {
+        File legacyDir = new File(PathUtils.getJarPath(), "engines");
+        if (!legacyDir.exists() || !legacyDir.isDirectory()) {
+            return;
+        }
+        File[] list = legacyDir.listFiles();
+        if (list == null) {
+            return;
+        }
+        for (File f : list) {
+            if (f == null || !f.isFile()) {
+                continue;
+            }
+            File target = new File(enginesDir, f.getName());
+            if (target.exists()) {
+                continue;
+            }
+            try (InputStream in = new java.io.FileInputStream(f);
+                 FileOutputStream out = new FileOutputStream(target)) {
+                byte[] buf = new byte[8192];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+                out.flush();
+                if (!Platform.isWindows()) {
+                    target.setExecutable(true, false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

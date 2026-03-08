@@ -8,6 +8,8 @@ import java.io.File;
  * Path 工具类
  */
 public class PathUtils {
+    private static final String APP_DATA_DIR = "至尊象棋";
+
     public static String getJarPath() {
         try {
             String path = PathUtils.class.getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -24,6 +26,32 @@ public class PathUtils {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public static String getDataPath() {
+        String custom = System.getProperty("zhizunxiangqi.data.dir");
+        File base;
+        if (custom != null && !custom.trim().isEmpty()) {
+            base = new File(custom.trim());
+        } else if (Platform.isWindows()) {
+            String localAppData = System.getenv("LOCALAPPDATA");
+            if (localAppData != null && !localAppData.trim().isEmpty()) {
+                base = new File(localAppData, APP_DATA_DIR);
+            } else {
+                base = new File(System.getProperty("user.home"), APP_DATA_DIR);
+            }
+        } else {
+            base = new File(System.getProperty("user.home"), ".zhizunxiangqi");
+        }
+
+        if (!base.exists()) {
+            base.mkdirs();
+        }
+        String path = base.getAbsolutePath();
+        if (!path.endsWith(File.separator)) {
+            path += File.separator;
+        }
+        return path;
     }
 
     /**

@@ -84,7 +84,7 @@ public class Properties implements Serializable {
     private int bookDelayEnd = 0;
 
     private int autoBattleOpeningMinTime = 1;
-    private int autoBattleOpeningMaxTime = 30;
+    private int autoBattleOpeningMaxTime = 10;
     private int autoBattleMiddleMinTime = 10;
     private int autoBattleMiddleMaxTime = 60;
     private int autoBattleEndMinTime = 40;
@@ -138,9 +138,20 @@ public class Properties implements Serializable {
 
     public static synchronized Properties getInstance() {
         if (prop == null) {
-            // 配置文件位于程序目录下，文件名固定为 "properties"（Java 序列化）。
-            String path = PathUtils.getJarPath() + "properties";
+            // 配置文件位于用户数据目录，文件名固定为 "properties"（Java 序列化）。
+            String path = PathUtils.getDataPath() + "properties";
             File file = new File(path);
+            if (!file.exists()) {
+                // 兼容历史版本：首次切换到新目录时，迁移旧位置配置。
+                File legacy = new File(PathUtils.getJarPath() + "properties");
+                if (legacy.exists()) {
+                    try {
+                        copyFile(legacy, file);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
             if (file.exists()) {
                 ObjectInputStream os = null;
                 try {
@@ -184,7 +195,7 @@ public class Properties implements Serializable {
         // 兼容旧版本序列化字段缺失：缺失时会反序列化为 0，这里回填默认区间。
         if (prop.autoBattleOpeningMinTime <= 1 && prop.autoBattleOpeningMaxTime <= 1) {
             prop.autoBattleOpeningMinTime = 1;
-            prop.autoBattleOpeningMaxTime = 30;
+            prop.autoBattleOpeningMaxTime = 10;
         }
         if (prop.autoBattleMiddleMinTime <= 1 && prop.autoBattleMiddleMaxTime <= 1) {
             prop.autoBattleMiddleMinTime = 10;
@@ -227,7 +238,7 @@ public class Properties implements Serializable {
         ObjectOutputStream os = null;
         try {
             // 全量序列化保存当前配置。
-            String path = PathUtils.getJarPath() + "properties";
+            String path = PathUtils.getDataPath() + "properties";
             File file = new File(path);
             os = new ObjectOutputStream(new FileOutputStream(file));
             os.writeObject(this);
@@ -609,5 +620,15 @@ public class Properties implements Serializable {
 
     public void setColloquialReviewStyle(boolean colloquialReviewStyle) {
         this.colloquialReviewStyle = colloquialReviewStyle;
+    }
+
+    private static void copyFile(File src, File dst) throws IOException {
+        try (InputStream in = new FileInputStream(src); OutputStream out = new FileOutputStream(dst)) {
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+        }
     }
 }
