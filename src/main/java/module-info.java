@@ -15,6 +15,6 @@ open module Xiangqi {
     requires java.desktop;
     requires java.sql;
 
-    exports com.sojourners.chess;
+    exports com.chf.chess;
 
 }

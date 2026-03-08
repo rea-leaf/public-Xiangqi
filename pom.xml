@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.chinse.chess</groupId>
+    <groupId>com.chf.chess</groupId>
     <artifactId>ZhiZunXiangQi</artifactId>
     <version>1.0.1</version>
 
@@ -88,7 +88,7 @@
                 <configuration>
                     <jlinkImageName>${app.display.name}</jlinkImageName>
                     <launcher>${app.display.name}</launcher>
-                    <mainClass>Xiangqi/com.sojourners.chess.Main</mainClass>
+                    <mainClass>Xiangqi/com.chf.chess.Main</mainClass>
                 </configuration>
             </plugin>
         </plugins>

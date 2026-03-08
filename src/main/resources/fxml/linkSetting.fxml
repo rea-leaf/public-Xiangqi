@@ -7,7 +7,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 
-<AnchorPane prefHeight="270.0" prefWidth="465.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sojourners.chess.controller.LinkSettingController">
+<AnchorPane prefHeight="270.0" prefWidth="465.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.chf.chess.controller.LinkSettingController">
    <children>
       <HBox alignment="TOP_RIGHT" layoutX="42.0" layoutY="184.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="60.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
          <children>
