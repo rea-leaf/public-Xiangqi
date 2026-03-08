@@ -6,6 +6,9 @@ import com.sojourners.chess.config.Properties;
 import com.sojourners.chess.util.PathUtils;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.InputStream;
 
 /**
  * OnnxModel 类。
@@ -33,11 +36,35 @@ public abstract class OnnxModel {
             opt.setIntraOpNumThreads(Properties.getInstance().getLinkThreadNum());
 
             String path = PathUtils.getJarPath() + getModelPath();
-
-            session = env.createSession(path, opt);
+            File modelFile = new File(path);
+            if (modelFile.exists() && modelFile.isFile()) {
+                session = env.createSession(path, opt);
+            } else {
+                byte[] bytes = readModelFromResource(getModelPath());
+                session = env.createSession(bytes, opt);
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private byte[] readModelFromResource(String modelPath) throws Exception {
+        String p = modelPath.replace('\\', '/');
+        if (p.startsWith("/")) {
+            p = p.substring(1);
+        }
+        InputStream in = OnnxModel.class.getClassLoader().getResourceAsStream(p);
+        if (in == null) {
+            throw new IllegalStateException("model not found: " + modelPath);
+        }
+        try (in; ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+            return out.toByteArray();
         }
     }
 

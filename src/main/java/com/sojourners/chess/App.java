@@ -3,6 +3,7 @@ package com.sojourners.chess;
 import com.sojourners.chess.controller.Controller;
 import com.sojourners.chess.controller.EditChessBoardController;
 import com.sojourners.chess.controller.LocalBookController;
+import com.sojourners.chess.util.ResourceBootstrap;
 import javafx.application.Application;
 import javafx.event.Event;
 import javafx.event.EventHandler;
@@ -19,8 +20,8 @@ import javafx.stage.WindowEvent;
  */
 public class App extends Application {
 
-    public static final String VERSION = "1.8";
-    public static final String BUILT_ON = "20260301";
+    public static final String VERSION = "1.0.0";
+    public static final String BUILT_ON = "202600308";
 
     private static Stage engineAdd;
     private static Stage engineSetting;
@@ -33,10 +34,12 @@ public class App extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        ResourceBootstrap.prepare();
+
         FXMLLoader fxmlLoader = new FXMLLoader();
         fxmlLoader.setLocation(getClass().getResource("/fxml/app.fxml"));
         Parent root = fxmlLoader.load();
-        primaryStage.setTitle("TCHESS  V" + VERSION);
+        primaryStage.setTitle("至尊象棋  V" + VERSION);
         primaryStage.setScene(new Scene(root));
         primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/image/icon.png")));
 

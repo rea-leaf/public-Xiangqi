@@ -6,6 +6,7 @@ import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,27 +24,44 @@ public class CustomBoardRender extends BaseBoardRender {
     public CustomBoardRender(Canvas canvas) {
         super(canvas);
 
-        this.bgImage = new Image(new File(PathUtils.getJarPath() + "/ui/board.png").toURI().toString());
+        this.bgImage = loadUiImage("board.png");
 
-        this.maskImage = new Image(new File(PathUtils.getJarPath() + "/ui/mask.png").toURI().toString());
-        this.mask2Image = new Image(new File(PathUtils.getJarPath() + "/ui/mask2.png").toURI().toString());
+        this.maskImage = loadUiImage("mask.png");
+        this.mask2Image = loadUiImage("mask2.png");
 
         map = new HashMap<>();
-        map.put('r', new Image(new File(PathUtils.getJarPath() + "/ui/br.png").toURI().toString()));
-        map.put('n', new Image(new File(PathUtils.getJarPath() + "/ui/bn.png").toURI().toString()));
-        map.put('b', new Image(new File(PathUtils.getJarPath() + "/ui/bb.png").toURI().toString()));
-        map.put('a', new Image(new File(PathUtils.getJarPath() + "/ui/ba.png").toURI().toString()));
-        map.put('k', new Image(new File(PathUtils.getJarPath() + "/ui/bk.png").toURI().toString()));
-        map.put('c', new Image(new File(PathUtils.getJarPath() + "/ui/bc.png").toURI().toString()));
-        map.put('p', new Image(new File(PathUtils.getJarPath() + "/ui/bp.png").toURI().toString()));
+        map.put('r', loadUiImage("br.png"));
+        map.put('n', loadUiImage("bn.png"));
+        map.put('b', loadUiImage("bb.png"));
+        map.put('a', loadUiImage("ba.png"));
+        map.put('k', loadUiImage("bk.png"));
+        map.put('c', loadUiImage("bc.png"));
+        map.put('p', loadUiImage("bp.png"));
 
-        map.put('R', new Image(new File(PathUtils.getJarPath() + "/ui/rr.png").toURI().toString()));
-        map.put('N', new Image(new File(PathUtils.getJarPath() + "/ui/rn.png").toURI().toString()));
-        map.put('B', new Image(new File(PathUtils.getJarPath() + "/ui/rb.png").toURI().toString()));
-        map.put('A', new Image(new File(PathUtils.getJarPath() + "/ui/ra.png").toURI().toString()));
-        map.put('K', new Image(new File(PathUtils.getJarPath() + "/ui/rk.png").toURI().toString()));
-        map.put('C', new Image(new File(PathUtils.getJarPath() + "/ui/rc.png").toURI().toString()));
-        map.put('P', new Image(new File(PathUtils.getJarPath() + "/ui/rp.png").toURI().toString()));
+        map.put('R', loadUiImage("rr.png"));
+        map.put('N', loadUiImage("rn.png"));
+        map.put('B', loadUiImage("rb.png"));
+        map.put('A', loadUiImage("ra.png"));
+        map.put('K', loadUiImage("rk.png"));
+        map.put('C', loadUiImage("rc.png"));
+        map.put('P', loadUiImage("rp.png"));
+    }
+
+    private Image loadUiImage(String name) {
+        String filePath = PathUtils.getJarPath() + "ui/" + name;
+        File file = new File(filePath);
+        if (file.exists()) {
+            return new Image(file.toURI().toString());
+        }
+        InputStream in = CustomBoardRender.class.getClassLoader().getResourceAsStream("ui/" + name);
+        if (in != null) {
+            try (in) {
+                return new Image(in);
+            } catch (Exception ignored) {
+            }
+        }
+        // 兜底返回空图，避免启动期直接抛异常。
+        return new Image("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AAoMBgQ0S8fEAAAAASUVORK5CYII=");
     }
 
     @Override

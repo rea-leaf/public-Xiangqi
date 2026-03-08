@@ -122,7 +122,7 @@
                   </Menu>
             </items>
           </Menu>
-          <Menu mnemonicParsing="false" text="帮助">
+          <Menu mnemonicParsing="false" text="帮助" visible="false">
             <items>
               <MenuItem mnemonicParsing="false" onAction="#homeClick" text="主页" />
                   <MenuItem mnemonicParsing="false" onAction="#instructionClick" text="使用说明" />

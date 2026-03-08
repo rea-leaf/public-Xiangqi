@@ -3,6 +3,7 @@ package com.sojourners.chess.media;
 import javafx.scene.media.AudioClip;
 
 import java.io.File;
+import java.net.URL;
 
 /**
  * SoundPlayer 类。
@@ -20,11 +21,34 @@ public class SoundPlayer {
     private AudioClip over;
 
     public SoundPlayer(String pickSound, String moveSound, String eatSound, String checkSound, String overSound) {
-        pick = new AudioClip(new File(pickSound).toURI().toString());
-        move = new AudioClip(new File(moveSound).toURI().toString());
-        eat = new AudioClip(new File(eatSound).toURI().toString());
-        check = new AudioClip(new File(checkSound).toURI().toString());
-        over = new AudioClip(new File(overSound).toURI().toString());
+        pick = new AudioClip(resolveMediaUri(pickSound));
+        move = new AudioClip(resolveMediaUri(moveSound));
+        eat = new AudioClip(resolveMediaUri(eatSound));
+        check = new AudioClip(resolveMediaUri(checkSound));
+        over = new AudioClip(resolveMediaUri(overSound));
+    }
+
+    private String resolveMediaUri(String path) {
+        File f = new File(path);
+        if (f.exists()) {
+            return f.toURI().toString();
+        }
+
+        String p = path.replace('\\', '/');
+        int idx = p.indexOf("/sound/");
+        if (idx >= 0) {
+            p = p.substring(idx + 1);
+        }
+        if (!p.startsWith("sound/")) {
+            p = "sound/" + new File(path).getName();
+        }
+        URL url = SoundPlayer.class.getClassLoader().getResource(p);
+        if (url != null) {
+            return url.toExternalForm();
+        }
+
+        // 最后兜底，沿用原路径，便于抛出明确异常。
+        return f.toURI().toString();
     }
 
     public void eat() {

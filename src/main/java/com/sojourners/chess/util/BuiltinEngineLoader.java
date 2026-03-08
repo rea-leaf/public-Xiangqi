@@ -183,6 +183,11 @@ public class BuiltinEngineLoader {
     }
 
     private static String detectProtocol(File file) {
+        String lowerName = file.getName().toLowerCase(Locale.ROOT);
+        if (lowerName.startsWith("pikafish")) {
+            // Pikafish 系列固定走 UCI，避免误判成 UCCI 导致握手失败。
+            return "uci";
+        }
         try {
             String p = Engine.test(file.getAbsolutePath(), new LinkedHashMap<>());
             if ("uci".equalsIgnoreCase(p) || "ucci".equalsIgnoreCase(p)) {
@@ -285,8 +290,9 @@ public class BuiltinEngineLoader {
         }
 
         if (nnue != null) {
-            // 兼容各引擎实现：使用完整路径，避免工作目录差异导致加载失败。
-            options.put("EvalFile", nnue.getAbsolutePath());
+            // 引擎工作目录就是可执行文件所在目录，优先使用文件名，
+            // 避免中文安装路径下部分引擎对全路径解析失败。
+            options.put("EvalFile", nnue.getName());
         }
         return options;
     }

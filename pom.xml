@@ -4,14 +4,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.sojourners.chess</groupId>
-    <artifactId>Xiangqi</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>com.chinse.chess</groupId>
+    <artifactId>ZhiZunXiangQi</artifactId>
+    <version>1.0.1</version>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <javafx.version>23.0.1</javafx.version>
         <javafx.maven.plugin.version>0.0.8</javafx.maven.plugin.version>
+        <app.display.name>至尊象棋</app.display.name>
+        <proguard.plugin.version>2.6.0</proguard.plugin.version>
+        <proguard.version>7.6.1</proguard.version>
+        <proguard.core.version>9.1.7</proguard.core.version>
     </properties>
 
 
@@ -82,11 +86,55 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>${javafx.maven.plugin.version}</version>
                 <configuration>
-                    <jlinkImageName>Xiangqi</jlinkImageName>
-                    <launcher>launcher</launcher>
+                    <jlinkImageName>${app.display.name}</jlinkImageName>
+                    <launcher>${app.display.name}</launcher>
                     <mainClass>Xiangqi/com.sojourners.chess.Main</mainClass>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>secure-release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.wvengen</groupId>
+                        <artifactId>proguard-maven-plugin</artifactId>
+                        <version>${proguard.plugin.version}</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.guardsquare</groupId>
+                                <artifactId>proguard-base</artifactId>
+                                <version>${proguard.version}</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>com.guardsquare</groupId>
+                                <artifactId>proguard-core</artifactId>
+                                <version>${proguard.core.version}</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>proguard</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <skip>true</skip>
+                            <injar>${project.build.finalName}.jar</injar>
+                            <outjar>${project.build.finalName}.jar</outjar>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <includeDependency>false</includeDependency>
+                            <obfuscate>false</obfuscate>
+                            <proguardInclude>${project.basedir}/proguard-rules.pro</proguardInclude>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
