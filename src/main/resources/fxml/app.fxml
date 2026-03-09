@@ -86,6 +86,7 @@
             <items>
                   <CheckMenuItem fx:id="menuOfStepTip" mnemonicParsing="false" onAction="#stepTipChecked" text="棋步提示" />
                   <CheckMenuItem fx:id="menuOfStepSound" mnemonicParsing="false" onAction="#stepSoundClick" text="走棋音效" />
+                  <CheckMenuItem fx:id="menuOfMoveVoice" mnemonicParsing="false" onAction="#moveVoiceClick" text="语音报招" />
                    <CheckMenuItem fx:id="menuOfColloquialReview" mnemonicParsing="false" onAction="#colloquialReviewClick" text="口语复盘注解" />
                    <Menu mnemonicParsing="false" text="顶部显示内容">
                      <items>

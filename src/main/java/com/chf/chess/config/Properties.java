@@ -32,6 +32,8 @@ public class Properties implements Serializable {
 
     private boolean stepSound;
 
+    private boolean moveVoice;
+
     private boolean showNumber = true;
 
     private boolean topWindow = false;
@@ -119,7 +121,7 @@ public class Properties implements Serializable {
 
     private Properties(ChessBoard.BoardSize boardSize, boolean stepTip,
                        int threadNum, int hashSize, String engineName, Engine.AnalysisModel analysisModel, long analysisValue,
-                       boolean stepSound, double stageWidth, double stageHeight, double splitPos, double splitPos2,
+                       boolean stepSound, boolean moveVoice, double stageWidth, double stageHeight, double splitPos, double splitPos2,
                        long linkScanTime, int linkThreadNum, boolean linkAnimation, boolean linkShowInfo, boolean linkBackMode,
                        Boolean localBookFirst, Boolean useCloudBook, Boolean onlyCloudFinalPhase, Integer cloudBookTimeout, Integer offManualSteps,
                        MoveRule moveRule, Boolean bookSwitch, List<String> openBookList) {
@@ -131,6 +133,7 @@ public class Properties implements Serializable {
         this.analysisModel = analysisModel;
         this.analysisValue = analysisValue;
         this.stepSound = stepSound;
+        this.moveVoice = moveVoice;
         this.stageWidth = stageWidth;
         this.stageHeight = stageHeight;
         this.splitPos = splitPos;
@@ -188,6 +191,7 @@ public class Properties implements Serializable {
                     prop = new Properties(ChessBoard.BoardSize.AUTOFIT_BOARD, true,
                             1, 16, "",
                             Engine.AnalysisModel.FIXED_TIME, 5000, false,
+                            false,
                             DEFAULT_STAGE_WIDTH, DEFAULT_STAGE_HEIGHT, 0.58, 0.47,
                             100, 2, true, true, false,
                             true, true, false, 2000, 9999,
@@ -574,6 +578,14 @@ public class Properties implements Serializable {
 
     public void setStepSound(boolean stepSound) {
         this.stepSound = stepSound;
+    }
+
+    public boolean isMoveVoice() {
+        return moveVoice;
+    }
+
+    public void setMoveVoice(boolean moveVoice) {
+        this.moveVoice = moveVoice;
     }
 
     public Engine.AnalysisModel getAnalysisModel() {

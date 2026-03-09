@@ -4,12 +4,18 @@ import javafx.scene.media.AudioClip;
 
 import java.io.File;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Locale;
 
 /**
  * SoundPlayer 类。
  * 音频播放相关类型。
  */
 public class SoundPlayer {
+    private static final boolean WINDOWS = System.getProperty("os.name", "")
+            .toLowerCase(Locale.ROOT).contains("win");
+
     private AudioClip pick;
 
     private AudioClip move;
@@ -69,6 +75,61 @@ public class SoundPlayer {
 
     public void over() {
         over.play();
+    }
+
+    public void speakMove(String moveText) {
+        if (!WINDOWS || moveText == null || moveText.isBlank()) {
+            return;
+        }
+        String text = normalizeMoveSpeechForStandardMandarin(moveText);
+        Thread.startVirtualThread(() -> {
+            try {
+                String script = "Add-Type -AssemblyName System.Speech;"
+                        + "$s=New-Object System.Speech.Synthesis.SpeechSynthesizer;"
+                        + "$s.Volume=100;"
+                        + "$voice=$s.GetInstalledVoices() | ForEach-Object { $_.VoiceInfo } | "
+                        + "Where-Object { $_.Culture.Name -like 'zh*' -and $_.Gender -eq 'Female' } | "
+                        + "Select-Object -First 1;"
+                        + "if ($voice -eq $null) { "
+                        + "$voice=$s.GetInstalledVoices() | ForEach-Object { $_.VoiceInfo } | "
+                        + "Where-Object { $_.Gender -eq 'Female' } | Select-Object -First 1"
+                        + " };"
+                        + "if ($voice -ne $null) { $s.SelectVoice($voice.Name) };"
+                        + "$ssml='<speak version=\"1.0\" xml:lang=\"zh-CN\"><prosody rate=\"-8%\" pitch=\"+12%\">"
+                        + escapeSsml(text)
+                        + "</prosody></speak>';"
+                        + "$s.SpeakSsml($ssml)";
+                String encoded = Base64.getEncoder()
+                        .encodeToString(script.getBytes(StandardCharsets.UTF_16LE));
+                Process process = new ProcessBuilder("powershell", "-NoProfile", "-NonInteractive",
+                        "-EncodedCommand", encoded)
+                        .redirectErrorStream(true)
+                        .start();
+                process.waitFor();
+            } catch (Exception ignored) {
+            }
+        });
+    }
+
+    private String escapeSsml(String text) {
+        return text.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
+    }
+
+    private String normalizeMoveSpeechForStandardMandarin(String moveText) {
+        return moveText.replaceAll("\\s+", "")
+                .replace("将", "匠")
+                .replace("相", "像")
+                .replace("车", "居")
+                .replace("炮", "泡")
+                .replace("卒", "足");
+    }
+
+    private String normalizeMoveSpeech(String moveText) {
+        return moveText.replaceAll("\\s+", "")
+                // 象棋术语里“车”读 ju，这里只调整播报文本，不影响界面显示。
+                .replace("车", "居");
     }
 
 }

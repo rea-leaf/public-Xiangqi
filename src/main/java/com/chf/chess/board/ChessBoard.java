@@ -50,6 +50,8 @@ public class ChessBoard {
 
     private boolean stepSound;
 
+    private boolean moveVoice;
+
     private boolean manualTip;
     private List<Step> manualList = new ArrayList<>();
 
@@ -177,7 +179,7 @@ public class ChessBoard {
     }
 
     public ChessBoard(Canvas canvas, BoardSize bs, BoardStyle style, boolean stepTip, boolean manualTip,
-                      boolean showMultiPV, boolean stepSound, boolean showNumber, String fenCode) {
+                      boolean showMultiPV, boolean stepSound, boolean moveVoice, boolean showNumber, String fenCode) {
         if (this.boardRender == null) {
             this.boardRender = style == BoardStyle.CUSTOM ? new CustomBoardRender(canvas) : new DefaultBoardRender(canvas);
         }
@@ -185,6 +187,7 @@ public class ChessBoard {
         this.stepTip = stepTip;
         this.manualTip = manualTip;
         this.stepSound = stepSound;
+        this.moveVoice = moveVoice;
         this.showNumber = showNumber;
         this.showMultiPV = showMultiPV;
         // 设置局面（为空则初始化标准开局）
@@ -450,6 +453,9 @@ public class ChessBoard {
                     sound.eat();
                 }
             }
+        }
+        if (moveVoice) {
+            sound.speakMove(sb.toString());
         }
 
         lastMoveCommentary = buildMoveCommentary(sb.toString(), moveCode);
@@ -877,6 +883,10 @@ public class ChessBoard {
      */
     public void setStepSound(boolean f) {
         this.stepSound = f;
+    }
+
+    public void setMoveVoice(boolean moveVoice) {
+        this.moveVoice = moveVoice;
     }
 
     public void setColloquialReviewStyle(boolean colloquialReviewStyle) {

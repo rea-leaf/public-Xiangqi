@@ -169,6 +169,8 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     @FXML
     private CheckMenuItem menuOfStepSound;
     @FXML
+    private CheckMenuItem menuOfMoveVoice;
+    @FXML
     private CheckMenuItem menuOfLinkBackMode;
     @FXML
     private CheckMenuItem menuOfLinkAnimation;
@@ -345,6 +347,13 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         CheckMenuItem item = (CheckMenuItem) event.getTarget();
         prop.setStepSound(item.isSelected());
         board.setStepSound(prop.isStepSound());
+    }
+
+    @FXML
+    void moveVoiceClick(ActionEvent event) {
+        CheckMenuItem item = (CheckMenuItem) event.getTarget();
+        prop.setMoveVoice(item.isSelected());
+        board.setMoveVoice(prop.isMoveVoice());
     }
 
     @FXML
@@ -1137,6 +1146,9 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         menuOfStepTip.setSelected(prop.isStepTip());
         // 走棋音效
         menuOfStepSound.setSelected(prop.isStepSound());
+        if (menuOfMoveVoice != null) {
+            menuOfMoveVoice.setSelected(prop.isMoveVoice());
+        }
         // 连线后台模式
         menuOfLinkBackMode.setSelected(prop.isLinkBackMode());
         // 连线动画确认
@@ -1274,7 +1286,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         engineStop();
         // 绘制棋盘
         board = new ChessBoard(this.canvas, prop.getBoardSize(), prop.getBoardStyle(), prop.isStepTip(), prop.isManualTip(),
-                engine != null && engine.getMultiPV() > 1, prop.isStepSound(), prop.isShowNumber(), fenCode);
+                engine != null && engine.getMultiPV() > 1, prop.isStepSound(), prop.isMoveVoice(), prop.isShowNumber(), fenCode);
         board.setColloquialReviewStyle(prop.isColloquialReviewStyle());
         // 设置局面
         redGo = StringUtils.isEmpty(fenCode) ? true : fenCode.contains("w");
