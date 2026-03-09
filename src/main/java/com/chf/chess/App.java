@@ -42,6 +42,7 @@ public class App extends Application {
         primaryStage.setTitle("至尊象棋  V" + VERSION);
         primaryStage.setScene(new Scene(root));
         primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/image/icon.png")));
+        primaryStage.sizeToScene();
 
         primaryStage.setOnCloseRequest(new EventHandler() {
             @Override

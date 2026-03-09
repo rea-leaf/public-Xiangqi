@@ -26,15 +26,22 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.Side;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ColorPicker;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.*;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -43,6 +50,10 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
@@ -54,6 +65,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -90,6 +102,10 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     @FXML
     private Label timeShowLabel;
     @FXML
+    private Label redScoreLabel;
+    @FXML
+    private Label blackScoreLabel;
+    @FXML
     private SplitPane splitPane;
     @FXML
     private SplitPane splitPane2;
@@ -110,6 +126,15 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     @FXML
     private Label engineTopTitleLabel;
+
+    @FXML
+    private MenuButton annotationOptionsMenuButton;
+
+    @FXML
+    private CheckMenuItem annotationOwnMenuItem;
+
+    @FXML
+    private CheckMenuItem annotationOpponentMenuItem;
 
     @FXML
     private Label hashUnitLabel;
@@ -344,6 +369,32 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     }
 
     @FXML
+    void annotationStyleSettingClick(ActionEvent event) {
+        showAnnotationStyleDialog();
+    }
+
+    @FXML
+    void annotationSideFilterClick(ActionEvent event) {
+        CheckMenuItem source = event != null ? (CheckMenuItem) event.getSource() : null;
+        boolean showOwn = annotationOwnMenuItem != null && annotationOwnMenuItem.isSelected();
+        boolean showOpponent = annotationOpponentMenuItem != null && annotationOpponentMenuItem.isSelected();
+        if (!showOwn && !showOpponent) {
+            if (source != null) {
+                source.setSelected(true);
+            } else if (annotationOwnMenuItem != null) {
+                annotationOwnMenuItem.setSelected(true);
+            }
+            showOwn = annotationOwnMenuItem != null && annotationOwnMenuItem.isSelected();
+            showOpponent = annotationOpponentMenuItem != null && annotationOpponentMenuItem.isSelected();
+        }
+        prop.setAnnotationShowOwnSide(showOwn);
+        prop.setAnnotationShowOpponentSide(showOpponent);
+        prop.save();
+        updateAnnotationOptionsMenuText();
+        refreshAnnotationStyles();
+    }
+
+    @FXML
     void showStatusBarClick(ActionEvent event) {
         CheckMenuItem item = (CheckMenuItem) event.getTarget();
         prop.setLinkShowInfo(item.isSelected());
@@ -513,7 +564,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
             model = Engine.AnalysisModel.FIXED_TIME;
             value = nextHumanLikeThinkTime(redGo);
             if (prop.isLinkShowInfo()) {
-                timeShowLabel.setText("自动对弈思考" + value / 1000d + "s");
+                timeShowLabel.setText("对弈思考" + value / 1000d + "s");
             }
         }
         engine.setAnalysisModel(model, value);
@@ -1057,8 +1108,6 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     }
 
     public void initStage() {
-        borderPane.setPrefWidth(prop.getStageWidth());
-        borderPane.setPrefHeight(prop.getStageHeight());
         splitPane.setDividerPosition(0, prop.getSplitPos());
         splitPane2.setDividerPosition(0, prop.getSplitPos2());
 
@@ -1101,6 +1150,13 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         // 显示引擎日志
         menuOfShowEngineLog.setSelected(prop.isShowEngineLog());
         menuOfShowAnnotation.setSelected(!prop.isShowEngineLog());
+        if (annotationOwnMenuItem != null) {
+            annotationOwnMenuItem.setSelected(prop.isAnnotationShowOwnSide());
+        }
+        if (annotationOpponentMenuItem != null) {
+            annotationOpponentMenuItem.setSelected(prop.isAnnotationShowOpponentSide());
+        }
+        updateAnnotationOptionsMenuText();
         applyEngineLogVisibility();
         // 棋盘大小
         if (prop.getBoardSize() == ChessBoard.BoardSize.LARGE_BOARD) {
@@ -1123,9 +1179,11 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         // 右键菜单
         initBoardContextMenu();
         // 状态栏
-        this.infoShowLabel.prefWidthProperty().bind(statusToolBar.widthProperty().subtract(120));
+        this.infoShowLabel.setVisible(false);
+        this.infoShowLabel.setManaged(false);
         this.timeShowLabel.setText(prop.getAnalysisModel() == Engine.AnalysisModel.FIXED_TIME ? "固定时间" + prop.getAnalysisValue() / 1000d + "s" : "固定深度" + prop.getAnalysisValue() + "层");
         this.statusToolBar.setVisible(prop.isLinkShowInfo());
+        refreshBottomScores();
     }
 
     private void initBoardContextMenu() {
@@ -1230,6 +1288,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         listView.getItems().clear();
         // 清空思考状态信息
         this.infoShowLabel.setText("");
+        refreshBottomScores();
 
         // 库招显示
         doOpenBook();
@@ -1600,6 +1659,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
                         board.setTip(td.getDetail().get(0), td.getDetail().size() > 1 ? td.getDetail().get(1) : null, td.getPv());
                         if (td.getPv() == 1) {
                             chessManualHandle.setScore(td.getScore(), td.getMate());
+                            refreshBottomScores();
                         }
                         return;
                     }
@@ -1619,6 +1679,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
                     if (td.getPv() == 1) {
                         chessManualHandle.setScore(td.getScore(), td.getMate());
+                        refreshBottomScores();
                     }
                 });
             }
@@ -1640,6 +1701,10 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         if (engineComboBox != null) {
             engineComboBox.setVisible(show);
             engineComboBox.setManaged(show);
+        }
+        if (annotationOptionsMenuButton != null) {
+            annotationOptionsMenuButton.setVisible(!show);
+            annotationOptionsMenuButton.setManaged(!show);
         }
         if (threadComboBox != null) {
             threadComboBox.setVisible(show);
@@ -1674,30 +1739,258 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
                     setGraphic(null);
                     setStyle("");
                 } else {
-                    Label label = new Label(item);
-                    label.setWrapText(true);
-                    label.prefWidthProperty().bind(annotationListView.widthProperty().subtract(20));
                     boolean latest = getIndex() == 0;
                     boolean critical = isCriticalAnnotation(item);
+
+                    VBox card = new VBox(10);
+                    card.setPadding(new Insets(12, 14, 12, 14));
+                    card.prefWidthProperty().bind(annotationListView.widthProperty().subtract(24));
+                    card.setFillWidth(true);
+
+                    HBox header = new HBox(8);
+                    header.setAlignment(Pos.CENTER_LEFT);
+
+                    Label badge = new Label(latest ? "最新" : (critical ? "重点" : "讲解"));
+                    badge.setStyle(latest
+                            ? "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: white; -fx-background-color: #C62828; -fx-background-radius: 999; -fx-padding: 3 10 3 10;"
+                            : critical
+                            ? "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: white; -fx-background-color: #EF6C00; -fx-background-radius: 999; -fx-padding: 3 10 3 10;"
+                            : "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #5D4037; -fx-background-color: #EFE7DD; -fx-background-radius: 999; -fx-padding: 3 10 3 10;");
+
+                    Label title = new Label(extractAnnotationTitle(item));
+                    title.setWrapText(true);
+                    title.setStyle("-fx-font-size: " + formatPx(prop.getAnnotationTitleFontSize())
+                            + "; -fx-font-weight: bold; -fx-text-fill: " + resolveAnnotationTitleColor(latest, critical) + ";");
+
+                    Region spacer = new Region();
+                    HBox.setHgrow(spacer, Priority.ALWAYS);
+                    header.getChildren().addAll(badge, title, spacer);
+
+                    Label body = new Label(formatAnnotationBody(item));
+                    body.setWrapText(true);
+                    body.setStyle("-fx-font-size: " + formatPx(prop.getAnnotationBodyFontSize())
+                            + "; -fx-line-spacing: 4px; -fx-text-fill: " + prop.getAnnotationBodyColor() + ";");
+
+                    card.getChildren().addAll(header, body);
                     if (latest) {
-                        label.setTextFill(Color.web("#B71C1C"));
-                        setStyle("-fx-background-color: #FFECEC;");
+                        card.setStyle("-fx-background-color: linear-gradient(to bottom, #FFF7F4, #FFF0EE); -fx-border-color: #F0C8C0; -fx-border-width: 0 0 1 0; -fx-background-radius: 10; -fx-border-radius: 10;");
                     } else {
-                        label.setTextFill(critical ? Color.RED : Color.web("#403e3e"));
-                        setStyle("");
+                        card.setStyle(critical
+                                ? "-fx-background-color: #FFF8F1; -fx-border-color: #F5D0A9; -fx-border-width: 0 0 1 0; -fx-background-radius: 10; -fx-border-radius: 10;"
+                                : "-fx-background-color: #FFFCF8; -fx-border-color: #E8DED2; -fx-border-width: 0 0 1 0; -fx-background-radius: 10; -fx-border-radius: 10;");
                     }
+                    setPadding(new Insets(4, 6, 4, 6));
                     setText(null);
-                    setGraphic(label);
+                    setGraphic(card);
                 }
             }
         });
+    }
+
+    private String extractAnnotationTitle(String annotation) {
+        int split = annotation.indexOf("  ");
+        String head = split < 0 ? "" : annotation.substring(0, split).trim();
+        String detail = split < 0 ? annotation : annotation.substring(split + 2).trim();
+        int titleEnd = detail.indexOf('：');
+        String move = titleEnd >= 0 ? detail.substring(0, titleEnd).trim() : detail;
+        if (head.isEmpty()) {
+            return move;
+        }
+        return head + "  " + move;
+    }
+
+    private String formatAnnotationBody(String annotation) {
+        int split = annotation.indexOf("  ");
+        String body = split < 0 ? annotation : annotation.substring(split + 2).trim();
+        int titleEnd = body.indexOf('：');
+        if (titleEnd >= 0 && titleEnd + 1 < body.length()) {
+            body = body.substring(titleEnd + 1).trim();
+        }
+        body = body.replace("；对手常见：", "；对手常见应对：");
+        body = body.replace(" -> ", "  ->  ");
+        String[] sections = body.split("；");
+        StringBuilder formatted = new StringBuilder();
+        for (String section : sections) {
+            String text = section.trim();
+            if (text.isEmpty()) {
+                continue;
+            }
+            if (formatted.length() > 0) {
+                formatted.append("\n\n");
+            }
+            if (text.startsWith("对手常见应对：")) {
+                formatted.append(text.replace("对手常见应对：", "对手常见应对：\n"));
+            } else {
+                formatted.append("- ").append(text);
+            }
+        }
+        return formatted.toString();
+    }
+
+    private void showAnnotationStyleDialog() {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("招法讲解样式");
+        dialog.setHeaderText("自定义标题和正文的字体大小、颜色");
+        dialog.initOwner(App.getMainStage());
+
+        ButtonType resetButtonType = new ButtonType("恢复默认", ButtonBar.ButtonData.LEFT);
+        dialog.getDialogPane().getButtonTypes().addAll(resetButtonType, ButtonType.CANCEL, ButtonType.OK);
+
+        Spinner<Integer> titleSizeSpinner = new Spinner<>();
+        titleSizeSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(12, 40, (int) Math.round(prop.getAnnotationTitleFontSize())));
+        titleSizeSpinner.setEditable(true);
+
+        ColorPicker titleColorPicker = new ColorPicker(parseColor(prop.getAnnotationTitleColor(), "#2F2A26"));
+
+        Spinner<Integer> bodySizeSpinner = new Spinner<>();
+        bodySizeSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(12, 36, (int) Math.round(prop.getAnnotationBodyFontSize())));
+        bodySizeSpinner.setEditable(true);
+
+        ColorPicker bodyColorPicker = new ColorPicker(parseColor(prop.getAnnotationBodyColor(), "#332D28"));
+
+        GridPane grid = new GridPane();
+        grid.setHgap(12);
+        grid.setVgap(12);
+        grid.setPadding(new Insets(12));
+        grid.add(new Label("标题字号"), 0, 0);
+        grid.add(titleSizeSpinner, 1, 0);
+        grid.add(new Label("标题颜色"), 0, 1);
+        grid.add(titleColorPicker, 1, 1);
+        grid.add(new Label("正文字号"), 0, 2);
+        grid.add(bodySizeSpinner, 1, 2);
+        grid.add(new Label("正文颜色"), 0, 3);
+        grid.add(bodyColorPicker, 1, 3);
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.setResultConverter(button -> button);
+        while (true) {
+            ButtonType result = dialog.showAndWait().orElse(ButtonType.CANCEL);
+            if (result == resetButtonType) {
+                titleSizeSpinner.getValueFactory().setValue(18);
+                titleColorPicker.setValue(Color.web("#2F2A26"));
+                bodySizeSpinner.getValueFactory().setValue(15);
+                bodyColorPicker.setValue(Color.web("#332D28"));
+                continue;
+            }
+            if (result != ButtonType.OK) {
+                return;
+            }
+            try {
+                titleSizeSpinner.increment(0);
+                bodySizeSpinner.increment(0);
+            } catch (Exception ex) {
+                DialogUtils.showErrorDialog("失败", "请输入有效的字号");
+                continue;
+            }
+            prop.setAnnotationTitleFontSize(titleSizeSpinner.getValue());
+            prop.setAnnotationTitleColor(toHexColor(titleColorPicker.getValue()));
+            prop.setAnnotationBodyFontSize(bodySizeSpinner.getValue());
+            prop.setAnnotationBodyColor(toHexColor(bodyColorPicker.getValue()));
+            prop.save();
+            refreshAnnotationStyles();
+            return;
+        }
+    }
+
+    private void refreshAnnotationStyles() {
+        if (annotationListView != null) {
+            annotationListView.refresh();
+            rebuildAnnotationList();
+        }
+    }
+
+    private void updateAnnotationOptionsMenuText() {
+        if (annotationOptionsMenuButton == null) {
+            return;
+        }
+        boolean showOwn = prop.isAnnotationShowOwnSide();
+        boolean showOpponent = prop.isAnnotationShowOpponentSide();
+        if (showOwn && showOpponent) {
+            annotationOptionsMenuButton.setText("讲解筛选: 双方");
+        } else if (showOwn) {
+            annotationOptionsMenuButton.setText("讲解筛选: 自己");
+        } else if (showOpponent) {
+            annotationOptionsMenuButton.setText("讲解筛选: 对方");
+        } else {
+            annotationOptionsMenuButton.setText("讲解筛选");
+        }
+    }
+
+    private void rebuildAnnotationList() {
+        if (annotationListView == null || chessManualHandle == null) {
+            return;
+        }
+        annotationListView.getItems().clear();
+        List<ManualRecord> records = recordTable != null ? recordTable.getItems() : null;
+        if (records == null) {
+            return;
+        }
+        boolean firstMoverRed = true;
+        String manualFen = chessManualHandle.getFenCode();
+        if (StringUtils.isNotEmpty(manualFen)) {
+            firstMoverRed = manualFen.contains(" w ") || manualFen.endsWith(" w");
+        }
+        for (int i = 1; i < records.size(); i++) {
+            ManualRecord record = records.get(i);
+            String annotation = record.getRemark();
+            if (StringUtils.isEmpty(annotation)) {
+                continue;
+            }
+            boolean moverRed = (i % 2) == 1 ? firstMoverRed : !firstMoverRed;
+            appendAnnotationToPanel(annotation, i, moverRed);
+        }
+    }
+
+    private String resolveAnnotationTitleColor(boolean latest, boolean critical) {
+        if (latest) {
+            return blendColor(prop.getAnnotationTitleColor(), "#8B1E1E", 0.35);
+        }
+        if (critical) {
+            return blendColor(prop.getAnnotationTitleColor(), "#BF360C", 0.45);
+        }
+        return prop.getAnnotationTitleColor();
+    }
+
+    private String blendColor(String baseHex, String accentHex, double accentWeight) {
+        Color base = parseColor(baseHex, "#2F2A26");
+        Color accent = parseColor(accentHex, accentHex);
+        double baseWeight = 1.0 - accentWeight;
+        Color mixed = Color.color(
+                clampColor(base.getRed() * baseWeight + accent.getRed() * accentWeight),
+                clampColor(base.getGreen() * baseWeight + accent.getGreen() * accentWeight),
+                clampColor(base.getBlue() * baseWeight + accent.getBlue() * accentWeight)
+        );
+        return toHexColor(mixed);
+    }
+
+    private double clampColor(double value) {
+        return Math.max(0, Math.min(1, value));
+    }
+
+    private Color parseColor(String color, String fallback) {
+        try {
+            return Color.web(color);
+        } catch (Exception ex) {
+            return Color.web(fallback);
+        }
+    }
+
+    private String toHexColor(Color color) {
+        return String.format(Locale.ROOT, "#%02X%02X%02X",
+                (int) Math.round(color.getRed() * 255),
+                (int) Math.round(color.getGreen() * 255),
+                (int) Math.round(color.getBlue() * 255));
+    }
+
+    private String formatPx(double value) {
+        return String.format(Locale.ROOT, "%.0fpx", value);
     }
 
     private void appendAnnotationToPanel(String annotation, int ply, boolean moverRed) {
         if (StringUtils.isEmpty(annotation) || annotationListView == null) {
             return;
         }
-        if (!shouldDisplayOwnSide(moverRed)) {
+        if (!shouldDisplayAnnotationForSide(moverRed)) {
             return;
         }
         int round = Math.max(1, (ply + 1) / 2);
@@ -1713,24 +2006,29 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         if (StringUtils.isEmpty(annotation) || prop.isShowEngineLog() || !prop.isLinkShowInfo()) {
             return;
         }
-        if (!shouldDisplayOwnSide(moverRed)) {
+        if (!shouldDisplayAnnotationForSide(moverRed)) {
             return;
         }
         infoShowLabel.setText(annotation);
         infoShowLabel.setTextFill(isCriticalAnnotation(annotation) ? Color.RED : Color.web("#403e3e"));
     }
 
-    private boolean shouldDisplayOwnSide(boolean moverRed) {
-        // 单边人机时：只显示“用户自己方”的注解。
-        // robotRed=true 代表引擎走红，用户是黑；robotBlack=true 代表引擎走黑，用户是红。
+    private boolean shouldDisplayAnnotationForSide(boolean moverRed) {
+        boolean ownSideRed = isOwnSideRed();
+        if (moverRed == ownSideRed) {
+            return prop.isAnnotationShowOwnSide();
+        }
+        return prop.isAnnotationShowOpponentSide();
+    }
+
+    private boolean isOwnSideRed() {
         if (robotRed.getValue() && !robotBlack.getValue()) {
-            return !moverRed;
+            return false;
         }
         if (!robotRed.getValue() && robotBlack.getValue()) {
-            return moverRed;
+            return true;
         }
-        // 双方都由同一方控制（都开/都关）时，不做过滤。
-        return true;
+        return !isReverse.getValue();
     }
 
     private boolean isCriticalAnnotation(String annotation) {
@@ -1778,8 +2076,6 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
         graphLinker.stop();
 
-        prop.setStageWidth(borderPane.getWidth());
-        prop.setStageHeight(borderPane.getHeight());
         prop.setSplitPos(splitPane.getDividerPositions()[0]);
         prop.setSplitPos2(splitPane2.getDividerPositions()[0]);
 
@@ -1977,6 +2273,7 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         board.browseChessRecord(fenCode, moveList);
         board.setManualList(nextList);
         this.redGo = redGo;
+        refreshBottomScores();
         // 趋势图
         refreshLineChart();
         // 引擎走棋
@@ -2000,6 +2297,24 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         if (linkMode.getValue()) {
             stopGraphLink();
         }
+    }
+
+    private void refreshBottomScores() {
+        if (redScoreLabel == null || blackScoreLabel == null) {
+            return;
+        }
+        Integer score = chessManualHandle != null ? chessManualHandle.getCurrentScore() : null;
+        if (score == null) {
+            redScoreLabel.setText("--");
+            blackScoreLabel.setText("--");
+            return;
+        }
+        redScoreLabel.setText(formatSideScore(score));
+        blackScoreLabel.setText(formatSideScore(-score));
+    }
+
+    private String formatSideScore(int score) {
+        return score > 0 ? "+" + score : String.valueOf(score);
     }
 
     @FXML

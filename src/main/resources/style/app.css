@@ -29,3 +29,13 @@
     /*-fx-background-insets:  0 0 0 0, 0, 1, 2;*/
 
 }
+
+#remarkText {
+    -fx-font-size: 17px;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6px;
+}
+
+#remarkText .content {
+    -fx-padding: 10px 12px;
+}

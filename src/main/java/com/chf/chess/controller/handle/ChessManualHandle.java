@@ -173,7 +173,9 @@ public class ChessManualHandle {
     }
 
     private void initRecordTable() {
+        recordTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         TableColumn<ManualRecord, String> idCol = (TableColumn<ManualRecord, String>) recordTable.getColumns().get(0);
+        idCol.setMaxWidth(50);
         idCol.setCellValueFactory(new PropertyValueFactory<ManualRecord, String>("id"));
         TableColumn<ManualRecord, String> nameCol = (TableColumn<ManualRecord, String>) recordTable.getColumns().get(1);
         nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(
@@ -181,6 +183,7 @@ public class ChessManualHandle {
                         ? cellData.getValue().getCnMove() + "      b"
                         : cellData.getValue().getCnMove()));
         TableColumn<ManualRecord, String> scoreCol = (TableColumn<ManualRecord, String>) recordTable.getColumns().get(2);
+        scoreCol.setMaxWidth(64);
         scoreCol.setCellValueFactory(new PropertyValueFactory<ManualRecord, String>("score"));
         subRecordTable.setCellFactory(lv -> {
             ListCell<ManualRecord> cell = new ListCell<>() {
@@ -249,9 +252,6 @@ public class ChessManualHandle {
         }
         if (next == null) {
             next = new ManualRecord(p + 1, move, cnMove);
-            if (StringUtils.isNotEmpty(autoRemark)) {
-                next.setRemark(autoRemark);
-            }
             if (expectedReplies != null && !expectedReplies.isEmpty()) {
                 next.setExpectedReplies(new LinkedHashMap<>(expectedReplies));
             }
@@ -286,6 +286,10 @@ public class ChessManualHandle {
         }
         LinkedHashMap<String, String> replies = currentRecord.getExpectedReplies();
         if (replies == null || replies.isEmpty()) {
+            return;
+        }
+        // 备注区保留给用户手动填写，不再自动回写预案命中信息。
+        if (replies != null) {
             return;
         }
 
@@ -543,6 +547,13 @@ public class ChessManualHandle {
 
     public int getP() {
         return this.p;
+    }
+
+    public Integer getCurrentScore() {
+        if (recordTable == null || recordTable.getItems().isEmpty() || p < 0 || p >= recordTable.getItems().size()) {
+            return null;
+        }
+        return recordTable.getItems().get(p).getScore();
     }
 
     public String getFenCode() {

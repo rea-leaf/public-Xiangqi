@@ -4,8 +4,10 @@ import com.chf.chess.board.ChessBoard;
 import com.chf.chess.config.Properties;
 import com.chf.chess.model.BookData;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * OpenBookManager 类。
@@ -39,13 +41,20 @@ public class OpenBookManager {
         // 重载本地库：先关闭旧连接，再按扩展名创建对应实现。
         close();
         localOpenBooks.clear();
+        if (prop.getOpenBookList() == null) {
+            return;
+        }
         for (String path : prop.getOpenBookList()) {
+            if (path == null || path.isBlank()) {
+                continue;
+            }
             try {
-                if (path.endsWith(".xqb")) {
+                String fileName = new File(path).getName().toLowerCase(Locale.ROOT);
+                if (fileName.endsWith(".xqb")) {
                     localOpenBooks.add(new XqbOpenBook(path));
-                } else if (path.endsWith(".obk")) {
+                } else if (fileName.endsWith(".obk")) {
                     localOpenBooks.add(new BhOpenBook(path));
-                } else if (path.endsWith(".pfBook")) {
+                } else if (fileName.endsWith(".pfbook")) {
                     localOpenBooks.add(new PfOpenBook(path));
                 }
             } catch (Exception e) {

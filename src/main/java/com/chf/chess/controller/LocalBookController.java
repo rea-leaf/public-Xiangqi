@@ -37,6 +37,7 @@ public class LocalBookController {
         File file = fileChooser.showOpenDialog(App.getLocalBookSetting());
         if (file != null) {
             prop.getOpenBookList().add(file.getPath());
+            prop.save();
             refreshTable();
         }
     }
@@ -46,6 +47,7 @@ public class LocalBookController {
         int index = table.getSelectionModel().getSelectedIndex();
         if (index >= 0) {
             prop.getOpenBookList().remove(index);
+            prop.save();
             refreshTable();
         }
     }
@@ -56,6 +58,7 @@ public class LocalBookController {
         if (index > 0 && index < table.getItems().size()) {
             String lb = prop.getOpenBookList().remove(index);
             prop.getOpenBookList().add(index - 1, lb);
+            prop.save();
             refreshTable();
             table.getSelectionModel().select(index - 1);
         }
@@ -67,6 +70,7 @@ public class LocalBookController {
         if (index >= 0 && index < table.getItems().size() - 1) {
             String lb = prop.getOpenBookList().remove(index);
             prop.getOpenBookList().add(index + 1, lb);
+            prop.save();
             refreshTable();
             table.getSelectionModel().select(index + 1);
         }
@@ -90,6 +94,7 @@ public class LocalBookController {
         nameCol.setOnEditCommit((EventHandler<TableColumn.CellEditEvent<LocalBook, String>>) localBookStringCellEditEvent -> {
             int row = localBookStringCellEditEvent.getTablePosition().getRow();
             prop.getOpenBookList().set(row, localBookStringCellEditEvent.getNewValue());
+            prop.save();
             refreshTable();
         });
 

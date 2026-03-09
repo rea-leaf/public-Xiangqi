@@ -19,6 +19,8 @@ import java.util.List;
 public class Properties implements Serializable {
 
     private static final long serialVersionUID = -1410031608529065857L;
+    private static final double DEFAULT_STAGE_WIDTH = 1100;
+    private static final double DEFAULT_STAGE_HEIGHT = 630;
 
     /** 单例配置对象。 */
     private static Properties prop;
@@ -103,6 +105,18 @@ public class Properties implements Serializable {
 
     private boolean colloquialReviewStyle = true;
 
+    private double annotationTitleFontSize = 18;
+
+    private double annotationBodyFontSize = 15;
+
+    private String annotationTitleColor = "#2F2A26";
+
+    private String annotationBodyColor = "#332D28";
+
+    private boolean annotationShowOwnSide = true;
+
+    private boolean annotationShowOpponentSide = false;
+
     private Properties(ChessBoard.BoardSize boardSize, boolean stepTip,
                        int threadNum, int hashSize, String engineName, Engine.AnalysisModel analysisModel, long analysisValue,
                        boolean stepSound, double stageWidth, double stageHeight, double splitPos, double splitPos2,
@@ -174,7 +188,7 @@ public class Properties implements Serializable {
                     prop = new Properties(ChessBoard.BoardSize.AUTOFIT_BOARD, true,
                             1, 16, "",
                             Engine.AnalysisModel.FIXED_TIME, 5000, false,
-                            920, 737, 0.64, 0.6,
+                            DEFAULT_STAGE_WIDTH, DEFAULT_STAGE_HEIGHT, 0.58, 0.47,
                             100, 2, true, true, false,
                             true, true, false, 2000, 9999,
                             MoveRule.BEST_SCORE, true, new ArrayList<>());
@@ -183,6 +197,8 @@ public class Properties implements Serializable {
                 }
             }
             normalizeAutoBattleTime(prop);
+            normalizeAnnotationStyle(prop);
+            normalizeLayout(prop);
             BuiltinEngineLoader.autoLoad(prop);
         }
         return prop;
@@ -232,6 +248,56 @@ public class Properties implements Serializable {
             return 90;
         }
         return value;
+    }
+
+    private static void normalizeAnnotationStyle(Properties prop) {
+        if (prop == null) {
+            return;
+        }
+        if (prop.annotationTitleFontSize < 12 || prop.annotationTitleFontSize > 40) {
+            prop.annotationTitleFontSize = 18;
+        }
+        if (prop.annotationBodyFontSize < 12 || prop.annotationBodyFontSize > 36) {
+            prop.annotationBodyFontSize = 15;
+        }
+        if (prop.annotationTitleColor == null || prop.annotationTitleColor.isBlank()) {
+            prop.annotationTitleColor = "#2F2A26";
+        }
+        if (prop.annotationBodyColor == null || prop.annotationBodyColor.isBlank()) {
+            prop.annotationBodyColor = "#332D28";
+        }
+        if (!prop.annotationShowOwnSide && !prop.annotationShowOpponentSide) {
+            prop.annotationShowOwnSide = true;
+        }
+    }
+
+    private static void normalizeLayout(Properties prop) {
+        if (prop == null) {
+            return;
+        }
+        if (prop.stageWidth <= 0) {
+            prop.stageWidth = DEFAULT_STAGE_WIDTH;
+        }
+        if (prop.stageHeight <= 0) {
+            prop.stageHeight = DEFAULT_STAGE_HEIGHT;
+        }
+        if (prop.splitPos <= 0 || prop.splitPos >= 1
+                || nearlyEquals(prop.splitPos, 0.64)
+                || nearlyEquals(prop.splitPos, 0.56)
+                || nearlyEquals(prop.splitPos, 0.49)
+                || nearlyEquals(prop.splitPos, 0.6416122004357299)) {
+            prop.splitPos = 0.58;
+        }
+        if (prop.splitPos2 <= 0 || prop.splitPos2 >= 1
+                || nearlyEquals(prop.splitPos2, 0.6)
+                || nearlyEquals(prop.splitPos2, 0.54)
+                || nearlyEquals(prop.splitPos2, 0.6461538461538462)) {
+            prop.splitPos2 = 0.47;
+        }
+    }
+
+    private static boolean nearlyEquals(double value, double expected) {
+        return Math.abs(value - expected) < 0.02;
     }
 
     public void save() {
@@ -620,6 +686,54 @@ public class Properties implements Serializable {
 
     public void setColloquialReviewStyle(boolean colloquialReviewStyle) {
         this.colloquialReviewStyle = colloquialReviewStyle;
+    }
+
+    public double getAnnotationTitleFontSize() {
+        return annotationTitleFontSize;
+    }
+
+    public void setAnnotationTitleFontSize(double annotationTitleFontSize) {
+        this.annotationTitleFontSize = annotationTitleFontSize;
+    }
+
+    public double getAnnotationBodyFontSize() {
+        return annotationBodyFontSize;
+    }
+
+    public void setAnnotationBodyFontSize(double annotationBodyFontSize) {
+        this.annotationBodyFontSize = annotationBodyFontSize;
+    }
+
+    public String getAnnotationTitleColor() {
+        return annotationTitleColor;
+    }
+
+    public void setAnnotationTitleColor(String annotationTitleColor) {
+        this.annotationTitleColor = annotationTitleColor;
+    }
+
+    public String getAnnotationBodyColor() {
+        return annotationBodyColor;
+    }
+
+    public void setAnnotationBodyColor(String annotationBodyColor) {
+        this.annotationBodyColor = annotationBodyColor;
+    }
+
+    public boolean isAnnotationShowOwnSide() {
+        return annotationShowOwnSide;
+    }
+
+    public void setAnnotationShowOwnSide(boolean annotationShowOwnSide) {
+        this.annotationShowOwnSide = annotationShowOwnSide;
+    }
+
+    public boolean isAnnotationShowOpponentSide() {
+        return annotationShowOpponentSide;
+    }
+
+    public void setAnnotationShowOpponentSide(boolean annotationShowOpponentSide) {
+        this.annotationShowOpponentSide = annotationShowOpponentSide;
     }
 
     private static void copyFile(File src, File dst) throws IOException {

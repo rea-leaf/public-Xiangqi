@@ -12,6 +12,8 @@
         <maven.compiler.release>21</maven.compiler.release>
         <javafx.version>23.0.1</javafx.version>
         <javafx.maven.plugin.version>0.0.8</javafx.maven.plugin.version>
+        <native.maven.plugin.version>0.10.3</native.maven.plugin.version>
+        <gluonfx.maven.plugin.version>1.0.27</gluonfx.maven.plugin.version>
         <app.display.name>至尊象棋</app.display.name>
         <proguard.plugin.version>2.6.0</proguard.plugin.version>
         <proguard.version>7.6.1</proguard.version>
@@ -95,6 +97,60 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>native-release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.gluonhq</groupId>
+                        <artifactId>gluonfx-maven-plugin</artifactId>
+                        <version>${gluonfx.maven.plugin.version}</version>
+                        <configuration>
+                            <mainClass>com.chf.chess.Main</mainClass>
+                            <target>host</target>
+                            <verbose>true</verbose>
+                            <graalvmHome>${env.GRAALVM_HOME}</graalvmHome>
+                            <enableSWRendering>true</enableSWRendering>
+                            <nativeImageArgs>
+                                <nativeImageArg>--no-fallback</nativeImageArg>
+                                <nativeImageArg>-H:+ReportExceptionStackTraces</nativeImageArg>
+                                <nativeImageArg>-H:+AllowDeprecatedBuilderClassesOnImageClasspath</nativeImageArg>
+                                <nativeImageArg>--enable-url-protocols=http,https</nativeImageArg>
+                                <nativeImageArg>-H:IncludeResources=(fxml/.*|style/.*|ui/.*|sound/.*|image/.*|model/.*|font/.*|engines/.*|.*\.dll|.*\.ttf|.*\.frag|.*\.vert)</nativeImageArg>
+                            </nativeImageArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>native-release-legacy</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>${native.maven.plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <mainClass>com.chf.chess.Main</mainClass>
+                            <imageName>ZhiZunXiangQi</imageName>
+                            <quickBuild>false</quickBuild>
+                            <verbose>true</verbose>
+                            <buildArgs>
+                                <buildArg>--no-fallback</buildArg>
+                                <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                                <buildArg>-H:+AllowDeprecatedBuilderClassesOnImageClasspath</buildArg>
+                                <buildArg>--enable-url-protocols=http,https</buildArg>
+                                <buildArg>-H:IncludeResources=(fxml/.*|style/.*|ui/.*|sound/.*|image/.*|model/.*|font/.*|engines/.*|.*\.dll|.*\.ttf|.*\.frag|.*\.vert)</buildArg>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <profile>
             <id>secure-release</id>
             <build>

@@ -36,12 +36,15 @@ public abstract class BaseBoardRender implements BoardRender {
         int padding = getPadding(boardSize);
         int piece = getPieceSize(boardSize);
         int pos = padding + piece / 2;
+        double verticalOffset = showNumber ? getBoardNumberVerticalPadding(boardSize) : 0;
 
         canvas.setWidth(2 * padding + piece * 9);
-        canvas.setHeight(2 * padding + piece * 10);
+        canvas.setHeight(2 * padding + piece * 10 + verticalOffset * 2);
 
         // 绘制背景图片
         drawBackgroundImage(canvas.getWidth(), canvas.getHeight());
+        gc.save();
+        gc.translate(0, verticalOffset);
         // 绘制棋盘线
         drawBoardLine(pos, padding, piece, isReverse, boardSize);
         // 绘制线路序号
@@ -82,6 +85,7 @@ public abstract class BaseBoardRender implements BoardRender {
                 }
             }
         }
+        gc.restore();
     }
 
     public void paintAnimation(ChessBoard.BoardSize boardSize, char[][] board, ChessBoard.Step prevStep, ChessBoard.Point remark,
@@ -91,11 +95,14 @@ public abstract class BaseBoardRender implements BoardRender {
         int padding = getPadding(boardSize);
         int piece = getPieceSize(boardSize);
         int pos = padding + piece / 2;
+        double verticalOffset = showNumber ? getBoardNumberVerticalPadding(boardSize) : 0;
 
         canvas.setWidth(2 * padding + piece * 9);
-        canvas.setHeight(2 * padding + piece * 10);
+        canvas.setHeight(2 * padding + piece * 10 + verticalOffset * 2);
 
         drawBackgroundImage(canvas.getWidth(), canvas.getHeight());
+        gc.save();
+        gc.translate(0, verticalOffset);
         drawBoardLine(pos, padding, piece, isReverse, boardSize);
         if (showNumber) {
             drawBoardNum(pos, piece, isReverse, boardSize);
@@ -143,6 +150,7 @@ public abstract class BaseBoardRender implements BoardRender {
         double centerX = startX + (endX - startX) * progress;
         double centerY = startY + (endY - startY) * progress;
         drawPieceAtCenter((int) Math.round(centerX), (int) Math.round(centerY), piece, movingPiece, boardSize);
+        gc.restore();
     }
 
     // paint edit chess board demo piece
@@ -326,17 +334,23 @@ public abstract class BaseBoardRender implements BoardRender {
     public void drawBoardNum(int pos, int piece, boolean isReverse, ChessBoard.BoardSize style) {
         // 绘制线路序号
         double numberSize = getNumberSize(style);
+        double topY = pos - piece / 1.7;
+        double bottomY = pos + 9 * piece + piece / 1.7;
+
+        gc.save();
         gc.setFont(Font.font(numberSize));
         gc.setFill(Color.BLACK);
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setTextBaseline(VPos.CENTER);
         for (int i = 0; i < 9; i++) {
             // 黑方
             char number = (char) ('１' + i);
-            double xTop = pos + i * piece - numberSize / 2, xBottom = pos + (8 - i) * piece - numberSize / 2;
-            double yTop = pos - piece / 4, yBottom = pos + 9 * piece + piece / 2.3;
-            gc.fillText(String.valueOf(number), isReverse ? xBottom : xTop, isReverse ? yBottom : yTop);
+            double xTop = pos + i * piece, xBottom = pos + (8 - i) * piece;
+            gc.fillText(String.valueOf(number), isReverse ? xBottom : xTop, isReverse ? bottomY : topY);
             // 红方
-            gc.fillText(XiangqiUtils.map.get(number), isReverse ? xTop : xBottom, isReverse ? yTop : yBottom);
+            gc.fillText(XiangqiUtils.map.get(number), isReverse ? xTop : xBottom, isReverse ? topY : bottomY);
         }
+        gc.restore();
     }
 
     private void drawStarPos(int x, int y, int w, String style) {
@@ -367,6 +381,10 @@ public abstract class BaseBoardRender implements BoardRender {
      */
     private double getNumberSize(ChessBoard.BoardSize style) {
         return getPieceSize(style) / 4d;
+    }
+
+    private double getBoardNumberVerticalPadding(ChessBoard.BoardSize style) {
+        return getPieceSize(style) / 8d;
     }
 
     /**
