@@ -10,8 +10,10 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.RadioMenuItem?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
@@ -26,10 +28,11 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane fx:id="borderPane" minHeight="0.0" minWidth="0.0" prefHeight="712.0" prefWidth="1169.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.chf.chess.controller.Controller">
+<BorderPane fx:id="borderPane" minHeight="0.0" minWidth="0.0" prefHeight="820.0" prefWidth="1500.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.chf.chess.controller.Controller">
    <top>
       <MenuBar BorderPane.alignment="CENTER">
         <menus>
@@ -83,8 +86,8 @@
             <items>
                   <CheckMenuItem fx:id="menuOfStepTip" mnemonicParsing="false" onAction="#stepTipChecked" text="棋步提示" />
                   <CheckMenuItem fx:id="menuOfStepSound" mnemonicParsing="false" onAction="#stepSoundClick" text="走棋音效" />
-                  <CheckMenuItem fx:id="menuOfColloquialReview" mnemonicParsing="false" onAction="#colloquialReviewClick" text="口语复盘注解" />
-                  <Menu mnemonicParsing="false" text="顶部显示内容">
+                   <CheckMenuItem fx:id="menuOfColloquialReview" mnemonicParsing="false" onAction="#colloquialReviewClick" text="口语复盘注解" />
+                   <Menu mnemonicParsing="false" text="顶部显示内容">
                      <items>
                         <RadioMenuItem fx:id="menuOfShowAnnotation" mnemonicParsing="false" onAction="#showAnnotationModeClick" selected="true" text="注解">
                            <toggleGroup>
@@ -217,7 +220,7 @@
             </ToolBar>
          </top>
          <center>
-            <SplitPane fx:id="splitPane" dividerPositions="0.6416122004357299" stylesheets="@../style/split-pane.css" BorderPane.alignment="CENTER">
+             <SplitPane fx:id="splitPane" dividerPositions="0.58" stylesheets="@../style/split-pane.css" BorderPane.alignment="CENTER">
               <items>
                 <AnchorPane fx:id="canvasPane" minHeight="-Infinity" minWidth="-Infinity" prefHeight="0.0" prefWidth="0.0">
                      <children>
@@ -226,17 +229,29 @@
                               <Canvas fx:id="canvas" height="650.0" onMouseClicked="#canvasClick" width="586.0" BorderPane.alignment="CENTER" />
                            </center>
                         </BorderPane>
-                        <ToolBar fx:id="statusToolBar" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="27.0" prefWidth="200.0" style="-fx-pref-height: 27px;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                        <ToolBar fx:id="statusToolBar" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="44.0" prefWidth="200.0" style="-fx-pref-height: 44px;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                            <items>
-                              <Label fx:id="infoShowLabel" wrapText="true" />
-                              <Label fx:id="timeShowLabel" alignment="CENTER_RIGHT" style="-fx-pref-width: 100px;" textFill="#403e3e" wrapText="true" />
+                               <Label fx:id="infoShowLabel" wrapText="true" />
+                               <HBox alignment="CENTER" spacing="8.0">
+                                  <children>
+                                     <Label style="-fx-font-size: 14px; -fx-font-weight: bold;" text="红方" textFill="#B71C1C" />
+                                     <Label fx:id="redScoreLabel" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-background-color: #FFE7E7; -fx-background-radius: 8; -fx-padding: 3 10 3 10;" text="--" textFill="#B71C1C" />
+                                  </children>
+                               </HBox>
+                               <HBox alignment="CENTER" spacing="8.0">
+                                  <children>
+                                     <Label style="-fx-font-size: 14px; -fx-font-weight: bold;" text="黑方" textFill="#263238" />
+                                     <Label fx:id="blackScoreLabel" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-background-color: #ECEFF1; -fx-background-radius: 8; -fx-padding: 3 10 3 10;" text="--" textFill="#263238" />
+                                  </children>
+                               </HBox>
+                               <Label fx:id="timeShowLabel" alignment="CENTER_RIGHT" style="-fx-pref-width: 150px; -fx-font-size: 14px; -fx-font-weight: bold;" textFill="#403e3e" wrapText="false" />
                            </items>
                         </ToolBar>
                      </children>
                   </AnchorPane>
                 <AnchorPane minHeight="-Infinity" minWidth="-Infinity" prefHeight="0.0" prefWidth="0.0">
                      <children>
-                        <SplitPane fx:id="splitPane2" dividerPositions="0.6461538461538462" layoutX="32.0" layoutY="111.0" orientation="VERTICAL" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                         <SplitPane fx:id="splitPane2" dividerPositions="0.47" layoutX="32.0" layoutY="111.0" orientation="VERTICAL" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                           <items>
                             <AnchorPane minHeight="-Infinity" minWidth="-Infinity" prefHeight="0.0" prefWidth="0.0">
                                  <children>
@@ -247,8 +262,16 @@
                                        <top>
                                            <ToolBar fx:id="engineTopToolBar" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30.0" BorderPane.alignment="CENTER">
                                               <items>
-                                                 <Label fx:id="engineTopTitleLabel" text="引擎" />
-                                                 <ComboBox fx:id="engineComboBox" editable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="22.0" prefWidth="95.0" stylesheets="@../style/combobox.css" />
+                                                   <Label fx:id="engineTopTitleLabel" text="引擎" />
+                                                   <MenuButton fx:id="annotationOptionsMenuButton" mnemonicParsing="false" text="讲解筛选">
+                                                      <items>
+                                                         <CheckMenuItem fx:id="annotationOwnMenuItem" mnemonicParsing="false" onAction="#annotationSideFilterClick" selected="true" text="显示自己" />
+                                                         <CheckMenuItem fx:id="annotationOpponentMenuItem" mnemonicParsing="false" onAction="#annotationSideFilterClick" text="显示对方" />
+                                                         <SeparatorMenuItem mnemonicParsing="false" />
+                                                         <MenuItem mnemonicParsing="false" onAction="#annotationStyleSettingClick" text="招法讲解样式..." />
+                                                      </items>
+                                                   </MenuButton>
+                                                   <ComboBox fx:id="engineComboBox" editable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="22.0" prefWidth="95.0" stylesheets="@../style/combobox.css" />
                                                  <ComboBox fx:id="threadComboBox" editable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="22.0" prefWidth="60.0" stylesheets="@../style/combobox.css" />
                                                  <ComboBox fx:id="hashComboBox" editable="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="22.0" prefWidth="65.0" stylesheets="@../style/combobox.css" />
                                                  <Label fx:id="hashUnitLabel" text="MB" />
@@ -280,7 +303,7 @@
                                                       </ToolBar>
                                                    </bottom>
                                                    <center>
-                                                      <SplitPane dividerPositions="0.6" prefHeight="160.0" prefWidth="200.0" stylesheets="@../style/split-pane-one.css" BorderPane.alignment="CENTER">
+                                                      <SplitPane dividerPositions="0.34" prefHeight="160.0" prefWidth="200.0" stylesheets="@../style/split-pane-one.css" BorderPane.alignment="CENTER">
                                                         <items>
                                                             <TableView fx:id="recordTable" onMouseClicked="#recordTableClick" style="-fx-background-insets: 100%;" stylesheets="@../style/table.css">
                                                               <columns>
@@ -289,16 +312,16 @@
                                                                   <TableColumn editable="false" prefWidth="60.0" sortable="false" text="分数" />
                                                               </columns>
                                                             </TableView>
-                                                            <SplitPane dividerPositions="0.6" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" stylesheets="@../style/split-pane-zero.css">
+                                                            <SplitPane dividerPositions="0.7" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" stylesheets="@../style/split-pane-zero.css">
                                                               <items>
-                                                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+                                                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="120.0" prefWidth="160.0">
                                                                      <children>
                                                                         <BorderPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                            <top>
                                                                               <Label text="注解:" BorderPane.alignment="CENTER_LEFT" />
                                                                            </top>
                                                                            <center>
-                                                                              <TextArea fx:id="remarkText" wrapText="true" BorderPane.alignment="CENTER" />
+                                                                              <TextArea fx:id="remarkText" minHeight="180.0" prefHeight="220.0" style="-fx-font-size: 17px; -fx-background-insets: 0; -fx-background-radius: 6px;" stylesheets="@../style/app.css" wrapText="true" BorderPane.alignment="CENTER" />
                                                                            </center>
                                                                         </BorderPane>
                                                                      </children>
