@@ -279,6 +279,9 @@ public class Properties implements Serializable {
         if (prop == null) {
             return;
         }
+        if (prop.boardStyle == null) {
+            prop.boardStyle = ChessBoard.BoardStyle.CUSTOM;
+        }
         if (prop.stageWidth <= 0) {
             prop.stageWidth = DEFAULT_STAGE_WIDTH;
         }

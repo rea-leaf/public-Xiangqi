@@ -175,13 +175,27 @@ public class ChessBoard {
     }
     public enum BoardStyle {
         DEFAULT,
-        CUSTOM;
+        CUSTOM,
+        JADE,
+        INK,
+        LIGHT,
+        AUTUMN,
+        CHINESE,
+        ANTIQUE,
+        PALACE,
+        CELADON,
+        LANDSCAPE,
+        XUAN_PAPER,
+        CINNABAR,
+        EBONY,
+        BRONZE,
+        PINE_SOOT;
     }
 
     public ChessBoard(Canvas canvas, BoardSize bs, BoardStyle style, boolean stepTip, boolean manualTip,
                       boolean showMultiPV, boolean stepSound, boolean moveVoice, boolean showNumber, String fenCode) {
         if (this.boardRender == null) {
-            this.boardRender = style == BoardStyle.CUSTOM ? new CustomBoardRender(canvas) : new DefaultBoardRender(canvas);
+            this.boardRender = createBoardRender(style, canvas);
         }
 
         this.stepTip = stepTip;
@@ -252,8 +266,17 @@ public class ChessBoard {
     }
 
     public void setBoardStyle(BoardStyle style, Canvas canvas) {
-        this.boardRender = style == BoardStyle.CUSTOM ? new CustomBoardRender(canvas) : new DefaultBoardRender(canvas);
+        this.boardRender = createBoardRender(style, canvas);
         this.paint();
+    }
+
+    public static BaseBoardRender createBoardRender(BoardStyle style, Canvas canvas) {
+        BoardStyle actualStyle = style == null ? BoardStyle.CUSTOM : style;
+        return switch (actualStyle) {
+            case CUSTOM -> new CustomBoardRender(canvas);
+            case DEFAULT, JADE, INK, LIGHT, AUTUMN, CHINESE, ANTIQUE, PALACE, CELADON,
+                    LANDSCAPE, XUAN_PAPER, CINNABAR, EBONY, BRONZE, PINE_SOOT -> new DefaultBoardRender(canvas, actualStyle);
+        };
     }
 
     public String mouseClick(int x, int y, boolean canRedGo, boolean canBlackGo) {

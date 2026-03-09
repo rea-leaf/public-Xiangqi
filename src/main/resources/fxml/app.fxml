@@ -109,6 +109,20 @@
                            </toggleGroup>
                         </RadioMenuItem>
                         <RadioMenuItem fx:id="menuOfCustomBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="红黑" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfJadeBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="竹青" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfInkBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="水墨" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfLightBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="浅木" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfAutumnBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="秋韵" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfChineseBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="中国风" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfAntiqueBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="古朴风" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfPalaceBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="宫廷风" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfCeladonBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="青瓷风" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfLandscapeBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="山水风" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfXuanPaperBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="宣纸风" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfCinnabarBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="朱砂风" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfEbonyBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="乌木风" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfBronzeBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="金石风" toggleGroup="$boardStyle1" />
+                        <RadioMenuItem fx:id="menuOfPineSootBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="松烟风" toggleGroup="$boardStyle1" />
                      </items>
                   </Menu>
                   <Menu mnemonicParsing="false" text="棋盘大小">

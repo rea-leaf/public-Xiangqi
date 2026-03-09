@@ -196,8 +196,9 @@ public class EditChessBoardController {
     }
 
     public void initialize() {
-        this.boardRender = Properties.getInstance().getBoardStyle() == ChessBoard.BoardStyle.CUSTOM ? new CustomBoardRender(canvas) : new DefaultBoardRender(canvas);
-        this.demoBoardRender = Properties.getInstance().getBoardStyle() == ChessBoard.BoardStyle.CUSTOM ? new CustomBoardRender(demoCanvas) : new DefaultBoardRender(demoCanvas);
+        ChessBoard.BoardStyle boardStyle = Properties.getInstance().getBoardStyle();
+        this.boardRender = ChessBoard.createBoardRender(boardStyle, canvas);
+        this.demoBoardRender = ChessBoard.createBoardRender(boardStyle, demoCanvas);
         this.boardSize = ChessBoard.BoardSize.MIDDLE_BOARD;
 
         ToggleGroup group = new ToggleGroup();

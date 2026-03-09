@@ -163,6 +163,34 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     private RadioMenuItem menuOfDefaultBoard;
     @FXML
     private RadioMenuItem menuOfCustomBoard;
+    @FXML
+    private RadioMenuItem menuOfJadeBoard;
+    @FXML
+    private RadioMenuItem menuOfInkBoard;
+    @FXML
+    private RadioMenuItem menuOfLightBoard;
+    @FXML
+    private RadioMenuItem menuOfAutumnBoard;
+    @FXML
+    private RadioMenuItem menuOfChineseBoard;
+    @FXML
+    private RadioMenuItem menuOfAntiqueBoard;
+    @FXML
+    private RadioMenuItem menuOfPalaceBoard;
+    @FXML
+    private RadioMenuItem menuOfCeladonBoard;
+    @FXML
+    private RadioMenuItem menuOfLandscapeBoard;
+    @FXML
+    private RadioMenuItem menuOfXuanPaperBoard;
+    @FXML
+    private RadioMenuItem menuOfCinnabarBoard;
+    @FXML
+    private RadioMenuItem menuOfEbonyBoard;
+    @FXML
+    private RadioMenuItem menuOfBronzeBoard;
+    @FXML
+    private RadioMenuItem menuOfPineSootBoard;
 
     @FXML
     private CheckMenuItem menuOfStepTip;
@@ -281,6 +309,34 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         RadioMenuItem item = (RadioMenuItem) event.getTarget();
         if (item.equals(menuOfDefaultBoard)) {
             prop.setBoardStyle(ChessBoard.BoardStyle.DEFAULT);
+        } else if (item.equals(menuOfJadeBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.JADE);
+        } else if (item.equals(menuOfInkBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.INK);
+        } else if (item.equals(menuOfLightBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.LIGHT);
+        } else if (item.equals(menuOfAutumnBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.AUTUMN);
+        } else if (item.equals(menuOfChineseBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.CHINESE);
+        } else if (item.equals(menuOfAntiqueBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.ANTIQUE);
+        } else if (item.equals(menuOfPalaceBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.PALACE);
+        } else if (item.equals(menuOfCeladonBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.CELADON);
+        } else if (item.equals(menuOfLandscapeBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.LANDSCAPE);
+        } else if (item.equals(menuOfXuanPaperBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.XUAN_PAPER);
+        } else if (item.equals(menuOfCinnabarBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.CINNABAR);
+        } else if (item.equals(menuOfEbonyBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.EBONY);
+        } else if (item.equals(menuOfBronzeBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.BRONZE);
+        } else if (item.equals(menuOfPineSootBoard)) {
+            prop.setBoardStyle(ChessBoard.BoardStyle.PINE_SOOT);
         } else {
             prop.setBoardStyle(ChessBoard.BoardStyle.CUSTOM);
         }
@@ -1183,10 +1239,23 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
             menuOfSmallBoard.setSelected(true);
         }
         // 棋盘样式
-        if (prop.getBoardStyle() == ChessBoard.BoardStyle.DEFAULT) {
-            menuOfDefaultBoard.setSelected(true);
-        } else {
-            menuOfCustomBoard.setSelected(true);
+        switch (prop.getBoardStyle()) {
+            case DEFAULT -> menuOfDefaultBoard.setSelected(true);
+            case JADE -> menuOfJadeBoard.setSelected(true);
+            case INK -> menuOfInkBoard.setSelected(true);
+            case LIGHT -> menuOfLightBoard.setSelected(true);
+            case AUTUMN -> menuOfAutumnBoard.setSelected(true);
+            case CHINESE -> menuOfChineseBoard.setSelected(true);
+            case ANTIQUE -> menuOfAntiqueBoard.setSelected(true);
+            case PALACE -> menuOfPalaceBoard.setSelected(true);
+            case CELADON -> menuOfCeladonBoard.setSelected(true);
+            case LANDSCAPE -> menuOfLandscapeBoard.setSelected(true);
+            case XUAN_PAPER -> menuOfXuanPaperBoard.setSelected(true);
+            case CINNABAR -> menuOfCinnabarBoard.setSelected(true);
+            case EBONY -> menuOfEbonyBoard.setSelected(true);
+            case BRONZE -> menuOfBronzeBoard.setSelected(true);
+            case PINE_SOOT -> menuOfPineSootBoard.setSelected(true);
+            case CUSTOM -> menuOfCustomBoard.setSelected(true);
         }
         // 右键菜单
         initBoardContextMenu();
