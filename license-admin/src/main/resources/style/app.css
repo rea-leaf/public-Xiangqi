@@ -1,0 +1,35 @@
+.root {
+    -fx-background-color: linear-gradient(to bottom, #f8f3eb, #efe2cb);
+    -fx-font-family: "Microsoft YaHei";
+}
+
+.label {
+    -fx-text-fill: #2d241c;
+}
+
+.text-field,
+.text-area,
+.date-picker,
+.check-box {
+    -fx-font-size: 13px;
+}
+
+.text-field,
+.text-area,
+.date-picker > .text-field {
+    -fx-background-color: #fffaf2;
+    -fx-border-color: #c9af84;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+}
+
+.button {
+    -fx-background-color: linear-gradient(to bottom, #7b5431, #5f4026);
+    -fx-text-fill: #fff8ec;
+    -fx-background-radius: 6;
+    -fx-padding: 6 12 6 12;
+}
+
+.button:hover {
+    -fx-background-color: linear-gradient(to bottom, #8a623b, #6e4a2b);
+}

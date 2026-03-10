@@ -14,7 +14,7 @@ open module Xiangqi {
     requires com.microsoft.onnxruntime;
     requires java.desktop;
     requires java.sql;
+    requires org.bouncycastle.provider;
 
     exports com.chf.chess;
-
 }

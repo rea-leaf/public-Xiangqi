@@ -2,7 +2,10 @@ package com.chf.chess;
 
 import com.chf.chess.controller.Controller;
 import com.chf.chess.controller.EditChessBoardController;
+import com.chf.chess.controller.LicenseController;
 import com.chf.chess.controller.LocalBookController;
+import com.chf.chess.ui.LoadedView;
+import com.chf.chess.ui.WindowManager;
 import com.chf.chess.util.ResourceBootstrap;
 import javafx.application.Application;
 import javafx.event.Event;
@@ -31,30 +34,30 @@ public class App extends Application {
     private static Stage bookSetting;
     private static Stage linkSetting;
     private static Stage editChessBoard;
+    private static Stage licenseSetting;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         ResourceBootstrap.prepare();
 
-        FXMLLoader fxmlLoader = new FXMLLoader();
-        fxmlLoader.setLocation(getClass().getResource("/fxml/app.fxml"));
-        Parent root = fxmlLoader.load();
+        LoadedView view = WindowManager.load("/fxml/app.fxml");
+        Controller controller = view.controller();
         primaryStage.setTitle("至尊象棋  V" + VERSION);
-        primaryStage.setScene(new Scene(root));
+        primaryStage.setTitle("至尊象棋  V" + VERSION);
+        primaryStage.setScene(view.scene());
+        primaryStage.setTitle("至尊象棋  V" + VERSION);
         primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/image/icon.png")));
         primaryStage.sizeToScene();
 
         primaryStage.setOnCloseRequest(new EventHandler() {
             @Override
             public void handle(Event event) {
-                Controller controller = fxmlLoader.getController();
                 controller.exit();
             }
         });
         primaryStage.setOnShowing(new EventHandler<WindowEvent>() {
             @Override
             public void handle(WindowEvent windowEvent) {
-                Controller controller = fxmlLoader.getController();
                 controller.initStage();
             }
         });
@@ -157,13 +160,38 @@ public class App extends Application {
         linkSetting.close();
     }
 
+    public static void openLicenseDialog() {
+        try {
+            Stage stage = new Stage();
+            FXMLLoader fxmlLoader = new FXMLLoader();
+            fxmlLoader.setLocation(App.class.getResource("/fxml/licenseDialog.fxml"));
+            Parent pane = fxmlLoader.load();
+            Scene scene = new Scene(pane);
+            WindowManager.applyTheme(scene);
+            stage.setScene(scene);
+
+            licenseSetting = stage;
+            licenseSetting.setTitle("授权管理");
+            licenseSetting.initModality(Modality.APPLICATION_MODAL);
+            licenseSetting.initOwner(mainStage);
+
+            LicenseController controller = fxmlLoader.getController();
+            controller.setStage(licenseSetting);
+            licenseSetting.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public static String openEditChessBoard(char[][] board, boolean redGo, boolean isReverse) {
         try {
             Stage stage = new Stage();
             FXMLLoader fxmlLoader = new FXMLLoader();
             fxmlLoader.setLocation(App.class.getResource("/fxml/editChessBoard.fxml"));
             Parent pane = fxmlLoader.load();
-            stage.setScene(new Scene(pane));
+            Scene scene = new Scene(pane);
+            WindowManager.applyTheme(scene);
+            stage.setScene(scene);
 
             editChessBoard = stage;
             editChessBoard.setTitle("编辑局面");
@@ -192,7 +220,9 @@ public class App extends Application {
             FXMLLoader fxmlLoader = new FXMLLoader();
             fxmlLoader.setLocation(App.class.getResource(resource));
             Parent pane = fxmlLoader.load();
-            stage.setScene(new Scene(pane));
+            Scene scene = new Scene(pane);
+            WindowManager.applyTheme(scene);
+            stage.setScene(scene);
             return stage;
         } catch (Exception e) {
             e.printStackTrace();

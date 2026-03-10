@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane prefHeight="720.0" prefWidth="860.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.zhizun.licenseadmin.controller.LicenseAdminController">
+   <center>
+      <VBox spacing="14.0">
+         <children>
+            <GridPane hgap="12.0" vgap="10.0">
+               <columnConstraints>
+                  <ColumnConstraints minWidth="120.0" prefWidth="130.0" />
+                  <ColumnConstraints hgrow="ALWAYS" />
+                  <ColumnConstraints minWidth="120.0" prefWidth="130.0" />
+               </columnConstraints>
+               <children>
+                  <Label text="授权输出文件" />
+                  <TextField fx:id="outputLicenseField" GridPane.columnIndex="1" />
+                  <Button mnemonicParsing="false" onAction="#chooseOutputClick" text="保存位置" GridPane.columnIndex="2" />
+
+                  <Label text="客户名称" GridPane.rowIndex="1" />
+                  <TextField fx:id="holderField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                  <Label text="授权版本" GridPane.rowIndex="2" />
+                  <TextField fx:id="editionField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+                  <Label text="到期日期" GridPane.rowIndex="3" />
+                  <DatePicker fx:id="expiresDatePicker" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                  <CheckBox fx:id="perpetualCheckBox" mnemonicParsing="false" text="永久授权" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+
+                  <Label text="设备码" GridPane.rowIndex="4" />
+                  <TextField fx:id="machineCodeField" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                  <Button mnemonicParsing="false" onAction="#fillCurrentMachineCodeClick" text="填入本机设备码" GridPane.columnIndex="2" GridPane.rowIndex="4" />
+               </children>
+            </GridPane>
+
+            <Label text="授权功能" />
+            <GridPane hgap="16.0" vgap="10.0">
+               <columnConstraints>
+                  <ColumnConstraints hgrow="ALWAYS" />
+                  <ColumnConstraints hgrow="ALWAYS" />
+                  <ColumnConstraints hgrow="ALWAYS" />
+               </columnConstraints>
+               <children>
+                  <CheckBox fx:id="engineFeatureCheckBox" mnemonicParsing="false" text="引擎对弈" />
+                  <CheckBox fx:id="analysisFeatureCheckBox" mnemonicParsing="false" text="局面分析" GridPane.columnIndex="1" />
+                  <CheckBox fx:id="openingBookFeatureCheckBox" mnemonicParsing="false" text="开局库" GridPane.columnIndex="2" />
+                  <CheckBox fx:id="localBookFeatureCheckBox" mnemonicParsing="false" text="本地开局库管理" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="linkFeatureCheckBox" mnemonicParsing="false" text="连线功能" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="moveVoiceFeatureCheckBox" mnemonicParsing="false" text="语音报招" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="manualScoreFeatureCheckBox" mnemonicParsing="false" text="棋谱打分" GridPane.rowIndex="2" />
+               </children>
+            </GridPane>
+
+            <Separator />
+
+            <HBox spacing="8.0">
+               <children>
+                  <Button mnemonicParsing="false" onAction="#generateLicenseClick" text="生成授权文件" />
+                  <Button mnemonicParsing="false" onAction="#clearLogClick" text="清空日志" />
+               </children>
+            </HBox>
+
+            <TextArea fx:id="logArea" editable="false" prefHeight="280.0" wrapText="true" VBox.vgrow="ALWAYS" />
+         </children>
+         <padding>
+            <Insets bottom="16.0" left="16.0" right="16.0" top="16.0" />
+         </padding>
+      </VBox>
+   </center>
+</BorderPane>

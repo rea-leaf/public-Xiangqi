@@ -1,0 +1,119 @@
+.root {
+    -fx-background-color: linear-gradient(to bottom, #f8f2e8, #efe0c6);
+    -fx-font-family: "Microsoft YaHei";
+}
+
+.menu-bar {
+    -fx-background-color: linear-gradient(to bottom, #725033, #5b3d25);
+    -fx-padding: 2 8 2 8;
+}
+
+.menu-bar > .container > .menu-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+}
+
+.menu-bar > .container > .menu-button:hover,
+.menu-bar > .container > .menu-button:showing {
+    -fx-background-color: rgba(255, 248, 230, 0.18);
+}
+
+.menu-bar .label {
+    -fx-text-fill: #fff8e6;
+    -fx-font-weight: bold;
+}
+
+.context-menu {
+    -fx-background-color: #fffaf1;
+    -fx-background-radius: 8;
+    -fx-border-color: #c7a674;
+    -fx-border-radius: 8;
+    -fx-padding: 4;
+}
+
+.menu-item,
+.check-menu-item,
+.radio-menu-item {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+}
+
+.menu-item .label,
+.check-menu-item .label,
+.radio-menu-item .label {
+    -fx-text-fill: #2f2418;
+    -fx-font-weight: normal;
+}
+
+.menu-item:focused,
+.check-menu-item:focused,
+.radio-menu-item:focused {
+    -fx-background-color: #8f5d2f;
+}
+
+.menu-item:focused .label,
+.check-menu-item:focused .label,
+.radio-menu-item:focused .label {
+    -fx-text-fill: #fffaf1;
+}
+
+.menu-item:disabled .label,
+.check-menu-item:disabled .label,
+.radio-menu-item:disabled .label,
+.menu-bar > .container > .menu-button:disabled .label {
+    -fx-text-fill: #9a907f;
+}
+
+.tool-bar {
+    -fx-background-color: linear-gradient(to bottom, #faf5eb, #ead9bb);
+    -fx-border-color: #c8aa7b;
+    -fx-border-width: 0 0 1 0;
+}
+
+.tab-pane *.tab-header-area *.tab-header-background {
+    -fx-background-color: linear-gradient(to bottom, #f4ebdb, #ead8bc);
+}
+
+.tab {
+    -fx-background-color: #e9d5b2;
+    -fx-background-radius: 8 8 0 0;
+}
+
+.tab:selected {
+    -fx-background-color: #fff9ef;
+}
+
+.table-view,
+.list-view,
+.tree-view,
+.text-area,
+.text-field,
+.combo-box-base {
+    -fx-background-color: #fffaf2;
+    -fx-border-color: #ccb08a;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: linear-gradient(to bottom, #efdfc2, #dfc18f);
+}
+
+.table-view .column-header,
+.table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: #c7a674;
+}
+
+.split-pane {
+    -fx-background-color: transparent;
+}
+
+.split-pane:horizontal > .split-pane-divider,
+.split-pane:vertical > .split-pane-divider {
+    -fx-background-color: #d2b48c;
+}
+
+.button {
+    -fx-background-radius: 6;
+}

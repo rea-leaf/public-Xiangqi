@@ -101,6 +101,8 @@
                   <CheckMenuItem fx:id="menuOfShowNumber" mnemonicParsing="false" onAction="#showNumberClick" text="显示线路" />
                   <CheckMenuItem fx:id="menuOfTopWindow" mnemonicParsing="false" onAction="#topWindowClick" text="窗口置顶" />
                   <CheckMenuItem fx:id="menuOfShowStatus" mnemonicParsing="false" onAction="#showStatusBarClick" text="显示状态栏" />
+                  <MenuItem mnemonicParsing="false" onAction="#importLicenseClick" text="导入授权" />
+                  <MenuItem mnemonicParsing="false" onAction="#licenseManagerClick" text="授权管理" />
                   <Menu mnemonicParsing="false" text="棋盘样式">
                      <items>
                         <RadioMenuItem fx:id="menuOfDefaultBoard" mnemonicParsing="false" onAction="#boardStyleSelected" text="默认">

@@ -5,8 +5,13 @@ import com.chf.chess.board.ChessBoard;
 import com.chf.chess.config.Properties;
 import com.chf.chess.controller.handle.ChessManualCallBack;
 import com.chf.chess.controller.handle.ChessManualHandle;
+import com.chf.chess.controller.support.EngineBootstrap;
+import com.chf.chess.controller.support.FeatureGateSupport;
+import com.chf.chess.controller.support.OpenBookCoordinator;
 import com.chf.chess.enginee.Engine;
 import com.chf.chess.enginee.EngineCallBack;
+import com.chf.chess.license.LicenseManager;
+import com.chf.chess.license.LicensedFeature;
 import com.chf.chess.linker.*;
 import com.chf.chess.util.*;
 import com.chf.chess.linker.*;
@@ -294,6 +299,9 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     private List<String> tacticList;
 
     private final Map<String, String> engineDescMap = new LinkedHashMap<>();
+    private final FeatureGateSupport featureGateSupport = new FeatureGateSupport();
+    private final EngineBootstrap engineBootstrap = new EngineBootstrap();
+    private final OpenBookCoordinator openBookCoordinator = new OpenBookCoordinator();
 
     @FXML
     public void newButtonClick(ActionEvent event) {
@@ -381,11 +389,17 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         CheckMenuItem item = (CheckMenuItem) event.getTarget();
         prop.setTopWindow(item.isSelected());
         App.topWindow(prop.isTopWindow());
+        syncLicenseState();
     }
 
     @FXML
     void linkBackModeChecked(ActionEvent event) {
         CheckMenuItem item = (CheckMenuItem) event.getTarget();
+        if (item.isSelected() && !requireFeature(LicensedFeature.LINK)) {
+            item.setSelected(false);
+            prop.setLinkBackMode(false);
+            return;
+        }
         if (linkMode.getValue()) {
             stopGraphLink();
         }
@@ -395,6 +409,11 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     @FXML
     void linkAnimationChecked(ActionEvent event) {
         CheckMenuItem item = (CheckMenuItem) event.getTarget();
+        if (item.isSelected() && !requireFeature(LicensedFeature.LINK)) {
+            item.setSelected(false);
+            prop.setLinkAnimation(false);
+            return;
+        }
         prop.setLinkAnimation(item.isSelected());
     }
 
@@ -408,8 +427,45 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     @FXML
     void moveVoiceClick(ActionEvent event) {
         CheckMenuItem item = (CheckMenuItem) event.getTarget();
+        if (item.isSelected() && !requireFeature(LicensedFeature.MOVE_VOICE)) {
+            item.setSelected(false);
+            prop.setMoveVoice(false);
+            if (board != null) {
+                board.setMoveVoice(false);
+            }
+            return;
+        }
         prop.setMoveVoice(item.isSelected());
         board.setMoveVoice(prop.isMoveVoice());
+    }
+
+    @FXML
+    void licenseManagerClick(ActionEvent event) {
+        App.openLicenseDialog();
+        syncLicenseState();
+        if (engine == null) {
+            loadEngine(prop.getEngineName());
+        }
+    }
+
+    @FXML
+    void importLicenseClick(ActionEvent event) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("导入授权");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("License", "*.lic", "*.properties"));
+        File file = chooser.showOpenDialog(App.getMainStage());
+        if (file == null) {
+            return;
+        }
+        if (LicenseManager.getInstance().importLicense(file)) {
+            DialogUtils.showInfoDialog("导入成功", "授权文件已导入");
+        } else {
+            DialogUtils.showWarningDialog("导入失败", LicenseManager.getInstance().getStatusText());
+        }
+        syncLicenseState();
+        if (engine == null) {
+            loadEngine(prop.getEngineName());
+        }
     }
 
     @FXML
@@ -469,6 +525,9 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     @FXML
     public void analysisButtonClick(ActionEvent event) {
+        if (!requireFeature(LicensedFeature.ANALYSIS)) {
+            return;
+        }
         if (engine == null) {
             DialogUtils.showWarningDialog("提示", "引擎未加载");
             return;
@@ -500,6 +559,9 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     @FXML
     public void immediateButtonClick(ActionEvent event) {
+        if (!requireFeature(LicensedFeature.ENGINE)) {
+            return;
+        }
         if (redGo && robotRed.getValue() || !redGo && robotBlack.getValue()) {
             if (engine != null) {
                 engine.moveNow();
@@ -531,6 +593,9 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     @FXML
     public void blackButtonClick(ActionEvent event) {
+        if (!requireFeature(LicensedFeature.ENGINE)) {
+            return;
+        }
         if (engine == null) {
             DialogUtils.showWarningDialog("提示", "引擎未加载");
             return;
@@ -551,6 +616,9 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     @FXML
     public void engineManageClick(ActionEvent e) {
+        if (!requireFeature(LicensedFeature.ENGINE)) {
+            return;
+        }
         App.openEngineDialog();
         // 重新设置引擎列表
         refreshEngineComboBox();
@@ -570,6 +638,9 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     @FXML
     public void redButtonClick(ActionEvent event) {
+        if (!requireFeature(LicensedFeature.ENGINE)) {
+            return;
+        }
         if (engine == null) {
             DialogUtils.showWarningDialog("提示", "引擎未加载");
             return;
@@ -888,14 +959,16 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     private void doOpenBook() {
         // 开局库查询放在虚拟线程，避免阻塞 JavaFX UI 线程。
-        if (useOpenBook.getValue()) {
-            Thread.startVirtualThread(() -> {
-                List<BookData> results = OpenBookManager.getInstance().queryBook(board.getBoard(), redGo, chessManualHandle.getP() / 2 >= Properties.getInstance().getOffManualSteps());
-                this.showBookResults(results);
-            });
-        } else {
-            this.bookTable.getItems().clear();
-        }
+        openBookCoordinator.refresh(
+                LicenseManager.getInstance().isFeatureEnabled(LicensedFeature.OPENING_BOOK),
+                useOpenBook.getValue(),
+                board.getBoard(),
+                redGo,
+                () -> Properties.getInstance().getOffManualSteps(),
+                chessManualHandle.getP(),
+                this::showBookResults,
+                () -> this.bookTable.getItems().clear()
+        );
     }
 
     @FXML
@@ -965,6 +1038,9 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     @FXML
     void localBookManageButtonClick(ActionEvent e) {
+        if (!requireFeature(LicensedFeature.LOCAL_BOOK)) {
+            return;
+        }
         if (App.openLocalBookDialog()) {
             OpenBookManager.getInstance().setLocalOpenBooks();
         }
@@ -973,16 +1049,25 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     @FXML
     void timeSettingButtonClick(ActionEvent e) {
+        if (!requireFeature(LicensedFeature.ENGINE)) {
+            return;
+        }
         App.openTimeSetting();
     }
 
     @FXML
     void bookSettingButtonClick(ActionEvent e) {
+        if (!requireFeature(LicensedFeature.OPENING_BOOK)) {
+            return;
+        }
         App.openBookSetting();
     }
 
     @FXML
     void linkSettingClick(ActionEvent e) {
+        if (!requireFeature(LicensedFeature.LINK)) {
+            return;
+        }
         App.openLinkSetting();
 
     }
@@ -995,6 +1080,9 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     @FXML
     private void bookSwitchButtonClick(ActionEvent e) {
+        if (!requireFeature(LicensedFeature.OPENING_BOOK)) {
+            return;
+        }
         useOpenBook.setValue(!useOpenBook.getValue());
         prop.setBookSwitch(useOpenBook.getValue());
 
@@ -1003,6 +1091,9 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     @FXML
     private void linkButtonClick(ActionEvent e) {
+        if (!requireFeature(LicensedFeature.LINK)) {
+            return;
+        }
         if (engine == null) {
             DialogUtils.showWarningDialog("提示", "引擎未加载");
             return;
@@ -1179,6 +1270,84 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
         // 窗口置顶
         menuOfTopWindow.setSelected(prop.isTopWindow());
         App.topWindow(prop.isTopWindow());
+    }
+
+    private boolean requireFeature(LicensedFeature feature) {
+        return featureGateSupport.require(feature);
+    }
+
+    private void syncLicenseState() {
+        featureGateSupport.sync(new FeatureGateSupport.View() {
+            @Override
+            public void setEngineControlsEnabled(boolean enabled) {
+                redButton.setDisable(!enabled);
+                blackButton.setDisable(!enabled);
+                immediateButton.setDisable(!enabled);
+            }
+
+            @Override
+            public void setAnalysisEnabled(boolean enabled) {
+                analysisButton.setDisable(!enabled);
+                changeTacticButton.setDisable(!enabled && redButton.isDisable() && blackButton.isDisable());
+            }
+
+            @Override
+            public void setOpeningBookEnabled(boolean enabled) {
+                bookSwitchButton.setDisable(!enabled);
+            }
+
+            @Override
+            public void setLinkEnabled(boolean enabled) {
+                linkButton.setDisable(!enabled);
+            }
+
+            @Override
+            public void setManualScoreEnabled(boolean enabled) {
+                if (manualScoreButton != null) {
+                    manualScoreButton.setDisable(!enabled);
+                }
+            }
+
+            @Override
+            public void disableMoveVoice() {
+                prop.setMoveVoice(false);
+                if (menuOfMoveVoice != null) {
+                    menuOfMoveVoice.setSelected(false);
+                }
+                if (board != null) {
+                    board.setMoveVoice(false);
+                }
+            }
+
+            @Override
+            public void disableOpeningBook() {
+                useOpenBook.setValue(false);
+                prop.setBookSwitch(false);
+                if (bookTable != null) {
+                    bookTable.getItems().clear();
+                }
+            }
+
+            @Override
+            public void enableOpeningBookFromConfig() {
+                useOpenBook.setValue(prop.getBookSwitch());
+            }
+
+            @Override
+            public void disposeEngine() {
+                if (engine != null) {
+                    engine.close();
+                    engine = null;
+                }
+            }
+
+            @Override
+            public void stopLinkMode() {
+                if (linkMode.getValue()) {
+                    stopGraphLink();
+                }
+            }
+        });
     }
 
     private void setButtonTips() {
@@ -1579,23 +1748,14 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     }
 
     private void loadEngine(String name) {
-        try {
-            if (StringUtils.isNotEmpty(name)) {
-                for (EngineConfig ec : prop.getEngineConfigList()) {
-                    if (name.equals(ec.getName())) {
-                        // 热切换引擎：先关闭旧进程，再拉起新进程。
-                        if (engine != null) {
-                            engine.close();
-                        }
-                        engine = new Engine(ec, this);
-                        board.showMultiPV(engine.getMultiPV() > 1);
-                        return;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        engine = engineBootstrap.loadEngine(
+                name,
+                prop,
+                engine,
+                this,
+                showMultiPv -> board.showMultiPV(showMultiPv),
+                LicenseManager.getInstance().isFeatureEnabled(LicensedFeature.ENGINE)
+        );
     }
 
     /**
@@ -2132,6 +2292,9 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
 
     @FXML
     public void bookTableClick(MouseEvent event) {
+        if (!LicenseManager.getInstance().isFeatureEnabled(LicensedFeature.OPENING_BOOK)) {
+            return;
+        }
         if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
             if (redGo && !robotRed.getValue() || !redGo && !robotBlack.getValue() ||robotAnalysis.getValue()) {
                 BookData bd = bookTable.getSelectionModel().getSelectedItem();
@@ -2304,6 +2467,9 @@ public class Controller implements EngineCallBack, LinkerCallBack, ChessManualCa
     }
     @FXML
     void scoreButtonClick(ActionEvent event) {
+        if (!requireFeature(LicensedFeature.MANUAL_SCORE)) {
+            return;
+        }
         if (engine == null) {
             DialogUtils.showWarningDialog("提示", "引擎未加载");
             return;
